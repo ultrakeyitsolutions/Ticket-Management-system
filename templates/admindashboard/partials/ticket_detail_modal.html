@@ -1,0 +1,66 @@
+<!-- Ticket Detail Modal -->
+<div class="modal fade" id="ticketDetailModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Ticket Details - {{ ticket.ticket_id }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <div class="mb-2">
+                            <strong>Subject:</strong>
+                            <div class="text-muted">{{ ticket.title }}</div>
+                        </div>
+                        <div class="mb-2">
+                            <strong>Customer:</strong>
+                            <div class="text-muted">{{ ticket.created_by.username }}</div>
+                        </div>
+                        <div class="mb-2">
+                            <strong>Status:</strong>
+                            <div class="text-muted">
+                                <span class="badge bg-{% if ticket.status == 'Open' %}primary{% elif ticket.status == 'In Progress' %}warning{% elif ticket.status == 'Resolved' %}success{% elif ticket.status == 'Closed' %}secondary{% else %}secondary{% endif %}">{{ ticket.status|default:'Open' }}</span>
+                            </div>
+                        </div>
+                        <div class="mb-2">
+                            <strong>Priority:</strong>
+                            <div class="text-muted">
+                                <span class="badge bg-{% if ticket.priority == 'Low' %}info{% elif ticket.priority == 'Medium' %}warning{% elif ticket.priority == 'High' %}danger{% elif ticket.priority == 'Critical' %}dark{% else %}secondary{% endif %}">{{ ticket.priority|default:'Medium' }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-2">
+                            <strong>Category:</strong>
+                            <div class="text-muted">{{ ticket.category|default:'-' }}</div>
+                        </div>
+                        <div class="mb-2">
+                            <strong>Created:</strong>
+                            <div class="text-muted">{{ ticket.created_at|date:"Y-m-d H:i" }}</div>
+                        </div>
+                        <div class="mb-2">
+                            <strong>Updated:</strong>
+                            <div class="text-muted">{{ ticket.updated_at|date:"Y-m-d H:i" }}</div>
+                        </div>
+                        <div class="mb-2">
+                            <strong>Assigned To:</strong>
+                            <div class="text-muted">{{ ticket.assigned_to.username|default:'Not assigned' }}</div>
+                        </div>
+                    </div>
+                </div>
+                <hr>
+                <div class="mb-3">
+                    <strong>Description</strong>
+                    <div class="border rounded p-3 bg-light">
+                        {{ ticket.description|linebreaksbr|default:'No description provided' }}
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" onclick="window.location.href='/dashboard/admin-dashboard/ticket/{{ ticket.ticket_id }}/edit/'">Edit Ticket</button>
+            </div>
+        </div>
+    </div>
+</div>

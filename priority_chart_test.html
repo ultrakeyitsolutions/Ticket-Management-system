@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Priority Chart Test</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <h1>Agent Reports - Priority Chart Test</h1>
+    
+    <div style="width: 600px; height: 400px; margin: 20px;">
+        <canvas id="tickets-by-priority-chart"></canvas>
+    </div>
+    
+    <div id="debug-info">
+        <h3>Debug Information</h3>
+        <div id="priority-display"></div>
+    </div>
+    
+    <script>
+        // Simulate the exact data from backend
+        const priorityData = [0, 5, 0, 0]; // Low, Medium, High, Critical
+        
+        // Display debug info
+        document.getElementById('priority-display').innerHTML = `
+            <p><strong>Priority Data:</strong> ${JSON.stringify(priorityData)}</p>
+            <p><strong>Total Tickets:</strong> ${priorityData.reduce((a, b) => a + b, 0)}</p>
+            <p><strong>Breakdown:</strong></p>
+            <ul>
+                <li>Low: ${priorityData[0]}</li>
+                <li>Medium: ${priorityData[1]}</li>
+                <li>High: ${priorityData[2]}</li>
+                <li>Critical: ${priorityData[3]}</li>
+            </ul>
+        `;
+        
+        // Create the priority chart (exact same code as in reports.html)
+        const priorityCtx = document.getElementById('tickets-by-priority-chart');
+        
+        if (priorityCtx) {
+            console.log('Creating priority chart with data:', priorityData);
+            
+            new Chart(priorityCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['Low', 'Medium', 'High', 'Critical'],
+                    datasets: [{
+                        label: 'Tickets',
+                        data: priorityData,  
+                        backgroundColor: ['#36b9cc', '#1cc88a', '#f6c23e', '#e74a3b']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.label + ': ' + context.parsed + ' tickets';
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                stepSize: 1
+                            }
+                        }
+                    }
+                }
+            });
+            
+            console.log('Priority chart created successfully');
+        } else {
+            console.error('Priority chart canvas not found');
+        }
+    </script>
+</body>
+</html>

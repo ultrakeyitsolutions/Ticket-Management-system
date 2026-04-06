@@ -1,0 +1,600 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TicketHub - My Ratings</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link rel="stylesheet" href="{% static 'agentdashboard/css/style.css' %}">
+</head>
+<body>
+<div id="app">
+    <div id="sidebar-container"></div>
+
+    <div class="main-container">
+        <div id="header-container"></div>
+
+        <main class="content-area">
+            <div id="ratings" class="page-content active">
+
+                <!-- Page Header -->
+                <div class="page-header">
+                    <div>
+                        <h2>My Performance</h2>
+                        <p class="text-muted">See your ratings, feedback, and customer satisfaction</p>
+                    </div>
+                    <div class="d-flex">
+                        <div class="dropdown me-2">
+                            <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                <i class="bi bi-download me-1"></i> Export
+                            </button>
+                            <ul class="dropdown-menu">
+                                <li>
+                                    <a class="dropdown-item" href="/dashboard/agent-dashboard/export-ratings/?format=excel">
+                                        <i class="bi bi-file-earmark-excel me-2"></i>Excel
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="/dashboard/agent-dashboard/export-ratings/?format=pdf">
+                                        <i class="bi bi-file-earmark-pdf me-2"></i>PDF
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="/dashboard/agent-dashboard/export-ratings/?format=csv">
+                                        <i class="bi bi-file-earmark-text me-2"></i>CSV
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Summary Cards -->
+                <div class="row mb-4">
+                    <!-- Average Rating -->
+                    <div class="col-md-3 mb-3">
+                        <div class="card h-100">
+                            <div class="card-body text-center">
+                                <div class="display-4 fw-bold text-primary">{{ agent_avg_rating|default:"0.0" }}</div>
+                                <div class="text-muted mb-2">Average Rating</div>
+                                <div class="rating-stars mb-1">
+                                    {% with avg=agent_avg_rating|default:0 %}
+                                        {% for i in "12345" %}
+                                            {% if forloop.counter <= avg %}
+                                                <i class="bi bi-star-fill text-warning"></i>
+                                            {% else %}
+                                                <i class="bi bi-star text-muted"></i>
+                                            {% endif %}
+                                        {% endfor %}
+                                    {% endwith %}
+                                </div>
+                                <small class="text-muted">Based on {{ agent_total_reviews|default:0 }} ratings</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Response Rate -->
+                    <div class="col-md-3 mb-3">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <h6 class="card-title mb-0">Response Rate</h6>
+                                    <i class="bi bi-chat-square-text text-primary" style="font-size:1.5rem;"></i>
+                                </div>
+                                <div class="display-4 fw-bold me-2">{{ agent_response_rate|default:0 }}%</div>
+                                <div class="progress mt-2">
+                                    <div class="progress-bar bg-success" style="width:{{ agent_response_rate|default:0 }}%"></div>
+                                </div>
+                                <small class="text-muted">Percentage of tickets responded</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Satisfaction -->
+                    <div class="col-md-3 mb-3">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <h6 class="card-title mb-0">Satisfaction</h6>
+                                    <i class="bi bi-emoji-smile text-warning" style="font-size:1.5rem;"></i>
+                                </div>
+                                <div class="display-4 fw-bold me-2">{{ agent_satisfaction|default:0 }}%</div>
+                                <div class="progress mt-2">
+                                    <div class="progress-bar bg-warning" style="width:{{ agent_satisfaction|default:0 }}%"></div>
+                                </div>
+                                <small class="text-muted">Share of 4★ and 5★ ratings</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Response Time -->
+                    <div class="col-md-3 mb-3">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <h6 class="card-title mb-0">Avg Response Time</h6>
+                                    <i class="bi bi-stopwatch text-info" style="font-size:1.5rem;"></i>
+                                </div>
+                                <div class="display-4 fw-bold me-2">{{ agent_avg_response_hours|default:"0.0" }}h</div>
+                                <div class="progress mt-2">
+                                    <div class="progress-bar bg-info" style="width:76%"></div>
+                                </div>
+                                <small class="text-muted">Average hours to resolve</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Charts Row -->
+                <div class="row">
+                    <!-- Rating Trends Chart -->
+                    <div class="col-lg-8 mb-4">
+                        <div class="card h-100">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0">Rating Trends</h5>
+                                <div class="btn-group" role="group" id="trend-period-buttons">
+                                    <button type="button" class="btn btn-sm btn-outline-secondary active" data-trend-period="week">Week</button>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" data-trend-period="month">Month</button>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" data-trend-period="quarter">Quarter</button>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" data-trend-period="year">Year</button>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <div style="position:relative; height:300px;">
+                                    <canvas id="rating-trends-chart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Rating Distribution -->
+                    <div class="col-lg-4 mb-4">
+                        <div class="card h-100">
+                            <div class="card-header">
+                                <h5 class="mb-0">Rating Distribution</h5>
+                            </div>
+                            <div class="card-body">
+                                {% for star, count, pct in rating_distribution %}
+                                <div class="mb-3">
+                                    <div class="d-flex justify-content-between mb-1">
+                                        <span>{{ star }} <i class="bi bi-star-fill text-warning"></i></span>
+                                        <span>{{ count }}</span>
+                                    </div>
+                                    <div class="progress" style="height:10px;">
+                                        <div class="progress-bar
+                                            {% if star == 5 %}bg-success
+                                            {% elif star == 4 %}bg-info
+                                            {% elif star == 3 %}bg-warning
+                                            {% elif star == 2 %}bg-orange
+                                            {% else %}bg-danger{% endif %}"
+                                            style="width:{{ pct }}%;{% if star == 2 %}background-color:#fd7e14;{% endif %}">
+                                        </div>
+                                    </div>
+                                </div>
+                                {% empty %}
+                                    {% for star_num, count, pct in ""|make_list %}{% empty %}
+                                    <!-- Fallback to individual context vars -->
+                                    {% endfor %}
+                                    <div class="mb-3">
+                                        <div class="d-flex justify-content-between mb-1">
+                                            <span>5 <i class="bi bi-star-fill text-warning"></i></span>
+                                            <span>{{ agent_count_5|default:0 }}</span>
+                                        </div>
+                                        <div class="progress" style="height:10px;">
+                                            <div class="progress-bar bg-success" style="width:{{ agent_percent_5|default:0 }}%"></div>
+                                        </div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <div class="d-flex justify-content-between mb-1">
+                                            <span>4 <i class="bi bi-star-fill text-warning"></i></span>
+                                            <span>{{ agent_count_4|default:0 }}</span>
+                                        </div>
+                                        <div class="progress" style="height:10px;">
+                                            <div class="progress-bar bg-info" style="width:{{ agent_percent_4|default:0 }}%"></div>
+                                        </div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <div class="d-flex justify-content-between mb-1">
+                                            <span>3 <i class="bi bi-star-fill text-warning"></i></span>
+                                            <span>{{ agent_count_3|default:0 }}</span>
+                                        </div>
+                                        <div class="progress" style="height:10px;">
+                                            <div class="progress-bar bg-warning" style="width:{{ agent_percent_3|default:0 }}%"></div>
+                                        </div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <div class="d-flex justify-content-between mb-1">
+                                            <span>2 <i class="bi bi-star-fill text-warning"></i></span>
+                                            <span>{{ agent_count_2|default:0 }}</span>
+                                        </div>
+                                        <div class="progress" style="height:10px;">
+                                            <div class="progress-bar" style="width:{{ agent_percent_2|default:0 }}%;background-color:#fd7e14;"></div>
+                                        </div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <div class="d-flex justify-content-between mb-1">
+                                            <span>1 <i class="bi bi-star-fill text-warning"></i></span>
+                                            <span>{{ agent_count_1|default:0 }}</span>
+                                        </div>
+                                        <div class="progress" style="height:10px;">
+                                            <div class="progress-bar bg-danger" style="width:{{ agent_percent_1|default:0 }}%"></div>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Feedback Table -->
+                <div class="card mb-4">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Recent Feedback</h5>
+                        <div class="input-group" style="width:300px;">
+                            <span class="input-group-text"><i class="bi bi-search"></i></span>
+                            <input type="text" class="form-control" id="feedback-search" placeholder="Search feedback...">
+                        </div>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0" id="feedback-table">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Ticket</th>
+                                        <th>Rating</th>
+                                        <th>Feedback</th>
+                                        <th>Customer</th>
+                                        <th>Date</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% if agent_ratings %}
+                                        {% for rating in agent_ratings %}
+                                        <tr class="feedback-row">
+                                            <td>
+                                                <span class="text-primary fw-bold">{{ rating.ticket_reference|default:"-" }}</span>
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-{% if rating.rating >= 4 %}success{% elif rating.rating == 3 %}warning{% else %}danger{% endif %}">
+                                                    {{ rating.rating }}/5
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <div class="text-truncate" style="max-width:200px;">
+                                                    {{ rating.title }}{% if rating.content %} — {{ rating.content|truncatechars:60 }}{% endif %}
+                                                </div>
+                                            </td>
+                                            <td>{{ rating.user.get_full_name|default:rating.user.username }}</td>
+                                            <td>
+                                                <span class="text-muted small">{{ rating.created_at|date:"M d, Y H:i" }}</span>
+                                            </td>
+                                            <td>
+                                                <button
+                                                    class="btn btn-sm btn-outline-primary btn-ticket-view"
+                                                    type="button"
+                                                    data-ticket="{{ rating.ticket_reference|default:'' }}"
+                                                    data-rating="{{ rating.rating|default:'' }}"
+                                                    data-title="{{ rating.title|default:''|escapejs }}"
+                                                    data-content="{{ rating.content|default:''|escapejs }}"
+                                                    data-customer="{{ rating.user.get_full_name|default:rating.user.username|escapejs }}"
+                                                    data-date="{{ rating.created_at|date:'M d, Y H:i'|default:'' }}"
+                                                >
+                                                    <i class="bi bi-eye me-1"></i>View
+                                                </button>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    {% else %}
+                                        <tr>
+                                            <td colspan="6" class="text-center text-muted py-4">
+                                                <i class="bi bi-star display-6 d-block mb-2"></i>
+                                                No ratings received yet.
+                                            </td>
+                                        </tr>
+                                    {% endif %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Activity -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">Recent Ticket Activity</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-flex flex-column gap-3">
+                            {% if agent_recent_activity %}
+                                {% for t in agent_recent_activity %}
+                                <div class="d-flex align-items-start">
+                                    <div class="me-3
+                                        {% if t.status == 'Resolved' or t.status == 'Closed' %}text-success
+                                        {% elif t.status == 'In Progress' %}text-primary
+                                        {% else %}text-warning{% endif %}">
+                                        <i class="bi bi-ticket-detailed fs-5"></i>
+                                    </div>
+                                    <div>
+                                        <div>
+                                            <strong>{{ t.status }}</strong>
+                                            &mdash; ticket <span class="text-muted">#{{ t.ticket_id }}</span>
+                                            <span class="text-muted small">· {{ t.title|truncatechars:50 }}</span>
+                                        </div>
+                                        <small class="text-muted">Updated {{ t.updated_at|date:"M d, Y H:i" }}</small>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            {% else %}
+                                <div class="text-muted text-center py-3">No recent ticket activity.</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Agent Performance Summary -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">My Performance Summary</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Agent</th>
+                                        <th>Avg. Rating</th>
+                                        <th>Total Ratings</th>
+                                        <th>5★ Share</th>
+                                        <th>Satisfaction</th>
+                                        <th>Score</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <div class="agent-avatar me-2">{{ request.user.username|slice:":2"|upper }}</div>
+                                                <div>
+                                                    <div class="fw-medium">{{ request.user.get_full_name|default:request.user.username }}</div>
+                                                    <div class="text-muted small">{{ request.user.email }}</div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span class="fw-bold">{{ agent_avg_rating|default:"0.0" }}</span>
+                                            <i class="bi bi-star-fill text-warning ms-1"></i>
+                                        </td>
+                                        <td>{{ agent_total_reviews|default:0 }}</td>
+                                        <td>
+                                            <div class="d-flex align-items-center gap-2">
+                                                <div class="progress flex-grow-1" style="height:6px;">
+                                                    <div class="progress-bar bg-success" style="width:{{ agent_percent_5|default:0 }}%"></div>
+                                                </div>
+                                                <span>{{ agent_percent_5|default:0 }}%</span>
+                                            </div>
+                                        </td>
+                                        <td>{{ agent_satisfaction|default:0 }}%</td>
+                                        <td>
+                                            <span class="text-success">
+                                                <i class="bi bi-graph-up-arrow"></i>
+                                                {{ agent_avg_rating|default:"0.0" }}/5
+                                            </span>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+            </div><!-- end #ratings -->
+
+            <footer class="dashboard-footer mt-4 mb-2 text-muted small">
+                <div class="d-flex justify-content-between align-items-center">
+                    <a href="https://ultrakeyit.com/" target="_blank" rel="noopener noreferrer" class="text-muted text-decoration-none">Ultrakey IT Solutions</a>
+                    <span>All systems operational</span>
+                </div>
+            </footer>
+        </main>
+    </div>
+</div>
+
+<!-- Feedback Detail Modal -->
+<div class="modal fade" id="recentFeedbackModal" tabindex="-1" aria-labelledby="recentFeedbackModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="recentFeedbackModalLabel">Feedback Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <div>
+                        <div class="text-muted small">Ticket</div>
+                        <div class="fw-semibold" id="modalTicket">-</div>
+                    </div>
+                    <div class="text-end">
+                        <div class="text-muted small">Rating</div>
+                        <div class="fw-semibold" id="modalRating">-</div>
+                    </div>
+                </div>
+                <hr class="my-2">
+                <div class="mb-2">
+                    <div class="text-muted small">Customer</div>
+                    <div class="fw-semibold" id="modalCustomer">-</div>
+                </div>
+                <div class="mb-2">
+                    <div class="text-muted small">Title</div>
+                    <div class="fw-semibold" id="modalTitle">-</div>
+                </div>
+                <div class="mb-2">
+                    <div class="text-muted small">Feedback</div>
+                    <div id="modalContent" style="white-space:pre-wrap;">-</div>
+                </div>
+                <div class="mt-3 text-muted small" id="modalDate"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Scripts -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+    // ── Component loader ──
+    function loadComponent(url, elementId) {
+        return fetch(url)
+            .then(r => { if (!r.ok) throw new Error('Network error'); return r.text(); })
+            .then(html => {
+                const el = document.getElementById(elementId);
+                if (!el) return false;
+                el.innerHTML = html;
+                if (url.includes('sidebar.html')) {
+                    document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+                    const active = document.querySelector('.nav-item[data-page="ratings"]');
+                    if (active) active.classList.add('active');
+                }
+                if (url.includes('header.html') && window.initializeHeader) {
+                    setTimeout(() => window.initializeHeader(), 50);
+                }
+                return true;
+            })
+            .catch(err => { console.error('Error loading component:', err); return false; });
+    }
+
+    // ── Rating Trends Chart ──
+    let trendsChart = null;
+
+    function loadRatingTrends(period) {
+        fetch(`/dashboard/agent-dashboard/get-rating-trends/?period=${period}`)
+            .then(r => r.json())
+            .then(data => {
+                if (!data.success) {
+                    console.warn('Trends API error:', data.message);
+                    return;
+                }
+                const labels  = data.data.map(d => d.label);
+                const ratings = data.data.map(d => d.rating);
+                const ctx = document.getElementById('rating-trends-chart');
+                if (!ctx) return;
+
+                if (trendsChart) trendsChart.destroy();
+
+                trendsChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Avg Rating',
+                            data: ratings,
+                            borderColor: '#4e73df',
+                            backgroundColor: 'rgba(78,115,223,0.1)',
+                            tension: 0.4,
+                            fill: true,
+                            pointRadius: 5,
+                            pointBackgroundColor: '#4e73df',
+                            pointHoverRadius: 7,
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                min: 0,
+                                max: 5,
+                                ticks: { stepSize: 1 },
+                                title: { display: true, text: 'Rating' }
+                            },
+                            x: {
+                                title: { display: true, text: 'Period' }
+                            }
+                        },
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                callbacks: {
+                                    label: ctx => `Rating: ${ctx.parsed.y}/5`
+                                }
+                            }
+                        }
+                    }
+                });
+            })
+            .catch(err => console.error('Trends fetch error:', err));
+    }
+
+    // ── View feedback modal ──
+    function setupFeedbackModal() {
+        document.addEventListener('click', function (e) {
+            const btn = e.target.closest('.btn-ticket-view');
+            if (!btn) return;
+
+            document.getElementById('modalTicket').textContent   = btn.dataset.ticket   || '-';
+            document.getElementById('modalRating').textContent   = (btn.dataset.rating  || '-') + (btn.dataset.rating ? '/5' : '');
+            document.getElementById('modalTitle').textContent    = btn.dataset.title    || '-';
+            document.getElementById('modalContent').textContent  = btn.dataset.content  || '-';
+            document.getElementById('modalCustomer').textContent = btn.dataset.customer || '-';
+            document.getElementById('modalDate').textContent     = btn.dataset.date     || '';
+
+            const modal = new bootstrap.Modal(document.getElementById('recentFeedbackModal'));
+            modal.show();
+        });
+    }
+
+    // ── Feedback search filter ──
+    function setupFeedbackSearch() {
+        const input = document.getElementById('feedback-search');
+        if (!input) return;
+        input.addEventListener('input', function () {
+            const q = this.value.toLowerCase();
+            document.querySelectorAll('#feedback-table tbody .feedback-row').forEach(row => {
+                row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none';
+            });
+        });
+    }
+
+    // ── Period button switching ──
+    function setupPeriodButtons() {
+        document.querySelectorAll('[data-trend-period]').forEach(btn => {
+            btn.addEventListener('click', function () {
+                document.querySelectorAll('[data-trend-period]').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                loadRatingTrends(this.dataset.trendPeriod);
+            });
+        });
+    }
+
+    // ── Init ──
+    document.addEventListener('DOMContentLoaded', function () {
+        const headerUrl  = '{{ header_url }}' || '/dashboard/agent-dashboard/partials/header.html';
+        const sidebarUrl = '{{ sidebar_url }}' || '/dashboard/agent-dashboard/partials/sidebar.html';
+        const modalsUrl  = '{{ modals_url }}'  || '/dashboard/agent-dashboard/partials/modals.html';
+
+        loadComponent(headerUrl, 'header-container').then(ok => {
+            if (ok) setTimeout(() => { if (window.initializeHeader) window.initializeHeader(); }, 100);
+        });
+        loadComponent(sidebarUrl, 'sidebar-container');
+        loadComponent(modalsUrl,  'modals-container');
+
+        // Load default period
+        loadRatingTrends('week');
+
+        setupFeedbackModal();
+        setupFeedbackSearch();
+        setupPeriodButtons();
+    });
+</script>
+
+<script src="{% static 'agentdashboard/js/script.js' %}"></script>
+<script src="{% static 'agentdashboard/js/header.js' %}"></script>
+</body>
+</html>

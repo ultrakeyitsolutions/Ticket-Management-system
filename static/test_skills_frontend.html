@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Skills Frontend Test</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+</head>
+<body>
+    <div class="container mt-5">
+        <h2>Skills & Tags Frontend Test</h2>
+        <p class="text-muted">This page tests the JavaScript functionality for skills management.</p>
+        
+        <div class="card mt-4">
+            <div class="card-header">
+                <h6 class="mb-0">Skills & Tags</h6>
+            </div>
+            <div class="card-body">
+                <div id="skills-list" class="d-flex flex-wrap gap-2 mb-3">
+                    <span class="text-muted">Loading skills...</span>
+                </div>
+                
+                <div class="input-group input-group-sm">
+                    <input type="text" id="new-skill-input" class="form-control" placeholder="Add a skill or tag (e.g. Email Support)">
+                    <button class="btn btn-outline-primary" type="button" id="add-skill-btn">Add</button>
+                </div>
+                
+                <div class="mt-3">
+                    <small class="text-muted">
+                        <strong>Instructions:</strong><br>
+                        1. Type a skill name in the input field<br>
+                        2. Click "Add" or press Enter<br>
+                        3. Click on any skill badge to remove it<br>
+                        4. Check browser console (F12) for error messages
+                    </small>
+                </div>
+            </div>
+        </div>
+        
+        <div class="mt-4">
+            <h5>Test Results:</h5>
+            <div id="test-results" class="alert alert-info">
+                <div id="loading-status">Initializing...</div>
+                <div id="add-status"></div>
+                <div id="remove-status"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Mock the skills API for testing
+        const mockSkills = ['Python', 'Django', 'JavaScript'];
+        
+        // Mock fetch API
+        const originalFetch = window.fetch;
+        window.fetch = function(url, options) {
+            const loadingStatus = document.getElementById('loading-status');
+            const addStatus = document.getElementById('add-status');
+            const removeStatus = document.getElementById('remove-status');
+            
+            if (url.includes('/get-skills/')) {
+                loadingStatus.innerHTML = '✓ GET skills API called successfully';
+                return Promise.resolve({
+                    json: () => Promise.resolve({
+                        success: true,
+                        skills: mockSkills
+                    })
+                });
+            } else if (url.includes('/save-skills/')) {
+                const data = JSON.parse(options.body);
+                mockSkills.length = 0;
+                mockSkills.push(...data.skills);
+                
+                if (data.skills.length > mockSkills.length) {
+                    addStatus.innerHTML = '✓ Skill added successfully';
+                } else {
+                    removeStatus.innerHTML = '✓ Skill removed successfully';
+                }
+                
+                return Promise.resolve({
+                    json: () => Promise.resolve({
+                        success: true,
+                        message: 'Skills saved successfully'
+                    })
+                });
+            }
+            
+            return originalFetch.apply(this, arguments);
+        };
+        
+        // Mock CSRF token
+        function getCSRFToken() {
+            return 'mock-csrf-token';
+        }
+        
+        // Load the skills JavaScript
+        const script = document.createElement('script');
+        script.src = '/static/agentdashboard/js/profile-skills.js';
+        script.onload = function() {
+            loadingStatus.innerHTML = '✓ Skills JavaScript loaded successfully';
+        };
+        script.onerror = function() {
+            loadingStatus.innerHTML = '✗ Failed to load skills JavaScript';
+        };
+        document.head.appendChild(script);
+    </script>
+</body>
+</html>

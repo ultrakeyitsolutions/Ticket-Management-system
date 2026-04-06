@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Search Debug Test</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+</head>
+<body>
+    <div class="container mt-4">
+        <h2>Search Debug Test</h2>
+        
+        <!-- Search Input -->
+        <div class="input-group mb-3" style="width: 300px;">
+            <span class="input-group-text"><i class="bi bi-search"></i></span>
+            <input type="text" class="form-control" id="feedbackSearch" placeholder="Search feedback...">
+        </div>
+        
+        <!-- Period Filters -->
+        <div class="btn-group mb-3" role="group">
+            <button type="button" class="btn btn-outline-secondary rating-period-btn active" data-period="all">All</button>
+            <button type="button" class="btn btn-outline-secondary rating-period-btn" data-period="week">Week</button>
+            <button type="button" class="btn btn-outline-secondary rating-period-btn" data-period="month">Month</button>
+            <button type="button" class="btn btn-outline-secondary rating-period-btn" data-period="quarter">Quarter</button>
+            <button type="button" class="btn btn-outline-secondary rating-period-btn" data-period="year">Year</button>
+        </div>
+        
+        <!-- Sample Feedback Table -->
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th>Ticket</th>
+                        <th>Rating</th>
+                        <th>Feedback</th>
+                        <th>Agent</th>
+                        <th>Date</th>
+                    </tr>
+                </thead>
+                <tbody id="feedbackTableBody">
+                    <tr class="feedback-row"
+                        data-created="2024-04-01T10:30:00Z"
+                        data-search="TKT-001 Great service John Doe agent1">
+                        <td>
+                            <a href="#" class="text-primary fw-bold">TKT-001</a>
+                            <div class="text-muted small">Customer feedback</div>
+                        </td>
+                        <td>
+                            <div class="rating-stars">
+                                <i class="bi bi-star-fill text-warning"></i>
+                                <i class="bi bi-star-fill text-warning"></i>
+                                <i class="bi bi-star-fill text-warning"></i>
+                                <i class="bi bi-star-fill text-warning"></i>
+                                <i class="bi bi-star-fill text-warning"></i>
+                            </div>
+                            <div class="text-muted small">5/5</div>
+                        </td>
+                        <td>
+                            <div class="rating-comment">
+                                <strong>Great service</strong><br>
+                                The agent was very helpful and resolved my issue quickly.
+                            </div>
+                        </td>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <div class="agent-avatar me-2">A</div>
+                                <div>
+                                    <div class="fw-medium">Agent One</div>
+                                    <div class="text-muted small">Agent</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <div>Apr 1, 2024</div>
+                            <div class="text-muted small">10:30</div>
+                        </td>
+                    </tr>
+                    <tr class="feedback-row"
+                        data-created="2024-03-15T14:20:00Z"
+                        data-search="TKT-002 Good support Jane Smith agent2">
+                        <td>
+                            <a href="#" class="text-primary fw-bold">TKT-002</a>
+                            <div class="text-muted small">Customer feedback</div>
+                        </td>
+                        <td>
+                            <div class="rating-stars">
+                                <i class="bi bi-star-fill text-warning"></i>
+                                <i class="bi bi-star-fill text-warning"></i>
+                                <i class="bi bi-star-fill text-warning"></i>
+                                <i class="bi bi-star-fill text-warning"></i>
+                                <i class="bi bi-star text-warning"></i>
+                            </div>
+                            <div class="text-muted small">4/5</div>
+                        </td>
+                        <td>
+                            <div class="rating-comment">
+                                <strong>Good support</strong><br>
+                                Response time could be better but overall good experience.
+                            </div>
+                        </td>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <div class="agent-avatar me-2">B</div>
+                                <div>
+                                    <div class="fw-medium">Agent Two</div>
+                                    <div class="text-muted small">Agent</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <div>Mar 15, 2024</div>
+                            <div class="text-muted small">14:20</div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Debug Console -->
+        <div class="mt-4">
+            <h5>Debug Console</h5>
+            <div id="debugConsole" class="border p-3 bg-light" style="height: 200px; overflow-y: auto; font-family: monospace; font-size: 12px;">
+                Debug messages will appear here...
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Debug function to log messages
+        function debugLog(message) {
+            const debugConsole = document.getElementById('debugConsole');
+            const timestamp = new Date().toLocaleTimeString();
+            debugConsole.innerHTML += `[${timestamp}] ${message}\n`;
+            debugConsole.scrollTop = debugConsole.scrollHeight;
+            console.log(message);
+        }
+        
+        // Period Filter Function
+        function filterFeedbackByPeriod(period) {
+            debugLog(`Filter: ${period}`);
+            
+            const feedbackRows = document.querySelectorAll('.feedback-row');
+            const now = new Date();
+            let cutoffDate;
+            
+            // Calculate cutoff date based on period
+            switch(period) {
+                case 'week':
+                    cutoffDate = new Date(now.getTime() - (7 * 24 * 60 * 60 * 1000));
+                    break;
+                case 'month':
+                    cutoffDate = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
+                    break;
+                case 'quarter':
+                    cutoffDate = new Date(now.getFullYear(), now.getMonth() - 3, now.getDate());
+                    break;
+                case 'year':
+                    cutoffDate = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
+                    break;
+                case 'all':
+                default:
+                    cutoffDate = null;
+                    break;
+            }
+            
+            debugLog(`Cutoff date: ${cutoffDate}`);
+            
+            let visibleCount = 0;
+            
+            feedbackRows.forEach(row => {
+                if (cutoffDate === null) {
+                    // Show all for 'all' period
+                    row.style.display = '';
+                    visibleCount++;
+                } else {
+                    // Check if row date is within period
+                    const createdDateStr = row.dataset.created;
+                    debugLog(`Checking date: ${createdDateStr}`);
+                    
+                    if (createdDateStr) {
+                        try {
+                            const createdDate = new Date(createdDateStr);
+                            debugLog(`Created date: ${createdDate}`);
+                            debugLog(`Date comparison: ${createdDate >= cutoffDate}`);
+                            
+                            if (createdDate >= cutoffDate) {
+                                row.style.display = '';
+                                visibleCount++;
+                            } else {
+                                row.style.display = 'none';
+                            }
+                        } catch (e) {
+                            debugLog(`Error parsing date: ${e}`);
+                            row.style.display = period === 'all' ? '' : 'none';
+                            if (period === 'all') visibleCount++;
+                        }
+                    } else {
+                        row.style.display = period === 'all' ? '' : 'none';
+                        if (period === 'all') visibleCount++;
+                    }
+                }
+            });
+            
+            debugLog(`Visible count: ${visibleCount}`);
+        }
+        
+        // Search Function
+        function searchFeedback(searchTerm) {
+            debugLog(`Search: "${searchTerm}"`);
+            
+            const feedbackRows = document.querySelectorAll('.feedback-row');
+            let visibleCount = 0;
+            
+            if (!searchTerm) {
+                // If search is empty, show all rows (respect current period filter)
+                const activePeriodBtn = document.querySelector('.rating-period-btn.active');
+                const period = activePeriodBtn ? activePeriodBtn.dataset.period : 'all';
+                debugLog(`Search empty, applying period filter: ${period}`);
+                filterFeedbackByPeriod(period);
+                return;
+            }
+            
+            feedbackRows.forEach(row => {
+                const searchText = row.dataset.search ? row.dataset.search.toLowerCase() : '';
+                const searchLower = searchTerm.toLowerCase();
+                const matchesSearch = searchText.includes(searchLower);
+                
+                debugLog(`Row search text: "${searchText}"`);
+                debugLog(`Matches search: ${matchesSearch}`);
+                
+                if (matchesSearch) {
+                    row.style.display = '';
+                    visibleCount++;
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+            
+            debugLog(`Search visible count: ${visibleCount}`);
+        }
+        
+        // Initialize event listeners
+        document.addEventListener('DOMContentLoaded', function() {
+            debugLog('Page loaded, initializing filters...');
+            
+            // Period Filter Event Listeners
+            const periodButtons = document.querySelectorAll('.rating-period-btn');
+            debugLog(`Found period buttons: ${periodButtons.length}`);
+            
+            periodButtons.forEach((button, index) => {
+                debugLog(`Button ${index}: "${button.textContent}" period: ${button.dataset.period}`);
+                button.addEventListener('click', function() {
+                    debugLog(`Period button clicked: ${this.dataset.period}`);
+                    // Remove active class from all buttons
+                    periodButtons.forEach(btn => btn.classList.remove('active'));
+                    // Add active class to clicked button
+                    this.classList.add('active');
+                    // Filter feedback by period
+                    const period = this.dataset.period;
+                    filterFeedbackByPeriod(period);
+                });
+            });
+            
+            // Search Functionality
+            const searchInput = document.getElementById('feedbackSearch');
+            debugLog(`Search input found: ${!!searchInput}`);
+            
+            if (searchInput) {
+                let searchTimeout;
+                searchInput.addEventListener('input', function() {
+                    debugLog(`Search input changed: "${this.value}"`);
+                    clearTimeout(searchTimeout);
+                    const searchTerm = this.value.trim();
+                    
+                    // Debounce search to avoid too many requests
+                    searchTimeout = setTimeout(() => {
+                        searchFeedback(searchTerm);
+                    }, 300);
+                });
+            } else {
+                debugLog('ERROR: Search input not found!');
+            }
+            
+            // Initialize with "All" filter
+            filterFeedbackByPeriod('all');
+        });
+    </script>
+</body>
+</html>

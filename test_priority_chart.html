@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Priority Chart Test</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <h1>Tickets by Priority Chart Test</h1>
+    
+    <div style="width: 600px; height: 400px;">
+        <canvas id="tickets-by-priority-chart"></canvas>
+    </div>
+    
+    <script>
+        // Test data from backend
+        const priorityData = [0, 5, 0, 0]; // Low, Medium, High, Critical
+        
+        // Create the chart (same as in reports.html)
+        const ctx = document.getElementById('tickets-by-priority-chart');
+        
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: ['Low', 'Medium', 'High', 'Critical'],
+                datasets: [{
+                    label: 'Tickets',
+                    data: priorityData,
+                    backgroundColor: ['#36b9cc', '#1cc88a', '#f6c23e', '#e74a3b']
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+        
+        console.log('Priority chart created with data:', priorityData);
+    </script>
+</body>
+</html>

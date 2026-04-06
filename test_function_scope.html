@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Function Scope</title>
+</head>
+<body>
+    <h1>Testing Function Scope</h1>
+    <button id="test-btn">Test Function</button>
+    <div id="output"></div>
+    
+    <script>
+        // Global variables for ticket volume chart
+        let ticketVolumeChart = null;
+        let currentPeriod = 'daily'; // Default period
+
+        // Global function for loading ticket volume data
+        async function loadTicketVolumeData(period = 'daily') {
+            console.log(`loadTicketVolumeData function called with period: ${period}`);
+            document.getElementById('output').innerHTML = `Function called successfully with period: ${period}`;
+        }
+
+        // Test the function
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('test-btn').addEventListener('click', function() {
+                if (typeof loadTicketVolumeData === 'function') {
+                    loadTicketVolumeData('weekly');
+                } else {
+                    document.getElementById('output').innerHTML = 'ERROR: Function not defined!';
+                }
+            });
+        });
+    </script>
+</body>
+</html>

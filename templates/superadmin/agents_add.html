@@ -1,0 +1,125 @@
+{% extends 'superadmin/base.html' %}
+{% load static %}
+{% block title %}Add Agent - Super Admin{% endblock %}
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <!-- Breadcrumb Navigation -->
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'superadmin:agents_list' %}">Agents</a>
+                    </li>
+                    <li class="breadcrumb-item active">Add Agent</li>
+                </ol>
+            </nav>
+            
+            <!-- Page Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="h3 mb-0">Add Agent</h1>
+                    <p class="text-muted mb-0">Create a new agent account in the system</p>
+                </div>
+                <div>
+                    <button class="btn btn-outline-secondary" onclick="window.location.href='{% url 'superadmin:agents_list' %}'">
+                        <i class="bi bi-arrow-left"></i> Back to Agents
+                    </button>
+                </div>
+            </div>
+
+            <!-- Add Agent Form -->
+            <div class="row justify-content-center">
+                <div class="col-lg-8">
+                    <div class="card sa-card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">Add New Agent</h5>
+                        </div>
+                        <div class="card-body">
+                            <form method="post" action="{% url 'superadmin:agents_add' %}">
+                                {% csrf_token %}
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">First Name *</label>
+                                        <input type="text" class="form-control" name="first_name" required>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Email *</label>
+                                        <input type="email" class="form-control" name="email" required>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Password *</label>
+                                        <input type="password" class="form-control" name="password" required>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Role</label>
+                                        <select class="form-select" name="role" required>
+                                            <option value="">Select a role</option>
+                                            <option value="admin">Admin</option>
+                                            <option value="agent">Agent</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Company</label>
+                                        <select class="form-select" name="company" required>
+                                            <option value="">Select a company</option>
+                                            {% for company in companies %}
+                                                <option value="{{ company.id }}">{{ company.name }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Status</label>
+                                        <select class="form-select" name="is_active" required>
+                                            <option value="true">Active</option>
+                                            <option value="false">Inactive</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-12 mb-3">
+                                        <button type="submit" class="btn btn-primary w-100">Add Agent</button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Handle form submission and redirect
+document.addEventListener('DOMContentLoaded', function() {
+    // Check for success message in URL parameters
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('success')) {
+        // Show success message
+        const successMsg = urlParams.get('message');
+        if (successMsg) {
+            // Create a temporary alert div
+            const alertDiv = document.createElement('div');
+            alertDiv.className = 'alert alert-success alert-dismissible fade show';
+            alertDiv.style.position = 'fixed';
+            alertDiv.style.top = '20px';
+            alertDiv.style.right = '20px';
+            alertDiv.style.zIndex = '9999';
+            alertDiv.innerHTML = `
+                <strong>Success!</strong> ${successMsg}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            `;
+            
+            document.body.appendChild(alertDiv);
+            
+            // Auto-remove after 5 seconds
+            setTimeout(() => {
+                if (alertDiv.parentNode) {
+                    alertDiv.parentNode.removeChild(alertDiv);
+                }
+            }, 5000);
+        }
+    }
+});
+</script>
+
+{% endblock %}
