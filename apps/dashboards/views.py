@@ -1938,6 +1938,88 @@ def user_dashboard_page(request, page: str):
             'password_error': password_error,
         })
 
+    if template_file == 'ratings.html':
+        # Handle form submission
+        if request.method == 'POST':
+            rating_raw = (request.POST.get('overall_rating') or '0').strip()
+            title = (request.POST.get('title') or '').strip()
+            content = (request.POST.get('content') or '').strip()
+            ticket_ref = (request.POST.get('ticket') or '').strip()
+            recommend_raw = (request.POST.get('recommend') or '').strip().lower()
+            recommend = recommend_raw in ['yes', '1', 'true', 'y', 'on']
+            
+            try:
+                rating_val = int(rating_raw)
+            except (TypeError, ValueError):
+                rating_val = 0
+            
+            if rating_val > 0 and title:
+                # Get agent from ticket if provided
+                agent = None
+                if ticket_ref:
+                    ticket = Ticket.objects.filter(ticket_id=ticket_ref, created_by=request.user).first()
+                    if ticket:
+                        agent = ticket.assigned_to
+                
+                UserRating.objects.create(
+                    user=request.user,
+                    agent=agent,
+                    ticket_reference=ticket_ref,
+                    rating=rating_val,
+                    title=title,
+                    content=content,
+                    recommend=recommend,
+                )
+                messages.success(request, 'Your review has been submitted successfully!')
+                # Refresh the data after submission
+                ratings_qs = UserRating.objects.filter(user=request.user).order_by('-created_at')
+            else:
+                messages.error(request, 'Please provide a rating and title for your review.')
+        
+        # Get user's ratings for statistics
+        ratings_qs = UserRating.objects.filter(user=request.user).order_by('-created_at')
+        total = ratings_qs.count()
+        
+        # Calculate rating statistics
+        agg = ratings_qs.aggregate(
+            avg_rating=Avg('rating'),
+            c5=Count('id', filter=Q(rating=5)),
+            c4=Count('id', filter=Q(rating=4)),
+            c3=Count('id', filter=Q(rating=3)),
+            c2=Count('id', filter=Q(rating=2)),
+            c1=Count('id', filter=Q(rating=1)),
+        ) if total else {"avg_rating": 0, "c5": 0, "c4": 0, "c3": 0, "c2": 0, "c1": 0}
+        
+        avg_val = float(agg.get('avg_rating') or 0.0)
+        c5 = int(agg.get('c5') or 0)
+        c4 = int(agg.get('c4') or 0)
+        c3 = int(agg.get('c3') or 0)
+        c2 = int(agg.get('c2') or 0)
+        c1 = int(agg.get('c1') or 0)
+        
+        def pct(count):
+            return int((count / total) * 100) if total else 0
+        
+        # Get user's tickets for dropdown
+        user_tickets = Ticket.objects.filter(created_by=request.user).order_by('-created_at')
+        
+        ctx.update({
+            'ratings': ratings_qs,
+            'avg_rating': round(avg_val, 1),
+            'total_reviews': total,
+            'count_5': c5,
+            'count_4': c4,
+            'count_3': c3,
+            'count_2': c2,
+            'count_1': c1,
+            'percent_5': pct(c5),
+            'percent_4': pct(c4),
+            'percent_3': pct(c3),
+            'percent_2': pct(c2),
+            'percent_1': pct(c1),
+            'user_tickets': user_tickets,
+        })
+
     if template_file == 'ticket.html':
         if request.method == 'POST' and request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             from tickets.models import TicketAttachment
@@ -1951,6 +2033,208 @@ def user_dashboard_page(request, page: str):
                 return JsonResponse({'success': True, 'message': 'Ticket created successfully!', 'ticket_id': ticket.id})
             else:
                 return JsonResponse({'success': False, 'errors': form.errors})
+
+    if template_file == 'settings.html':
+        user = request.user
+        profile = getattr(user, 'userprofile', None)
+        
+        # Initialize context variables
+        settings_saved = False
+        password_error = ''
+        twofa_changed = False
+        twofa_error = ''
+        password_last_changed = None
+        
+        # Get current settings
+        settings_theme = 'system'
+        settings_email_notifications = False
+        settings_desktop_notifications = False
+        settings_allow_dm_from_non_contacts = False
+        settings_2fa_enabled = False
+        
+        if profile:
+            settings_theme = getattr(profile, 'theme', 'system') or 'system'
+            settings_email_notifications = getattr(profile, 'email_notifications', False)
+            settings_desktop_notifications = getattr(profile, 'desktop_notifications', False)
+            settings_allow_dm_from_non_contacts = getattr(profile, 'allow_dm_from_non_contacts', False)
+            settings_2fa_enabled = getattr(profile, 'two_factor_enabled', False)
+            password_last_changed = profile.password_last_changed
+        
+        # Handle POST requests
+        if request.method == 'POST':
+            action = request.POST.get('action')
+            
+            if action == 'settings':
+                # Handle theme and notification preferences
+                theme = (request.POST.get('theme') or '').strip()
+                email_notifications = request.POST.get('email_notifications') == 'on'
+                desktop_notifications = request.POST.get('push_notifications') == 'on'
+                allow_dm_from_non_contacts = request.POST.get('marketing_emails') == 'on'
+                
+                if profile:
+                    profile.theme = theme if theme in ['light', 'dark', 'system'] else 'system'
+                    profile.email_notifications = email_notifications
+                    profile.desktop_notifications = desktop_notifications
+                    profile.allow_dm_from_non_contacts = allow_dm_from_non_contacts
+                    profile.save()
+                    settings_saved = True
+                    
+                    # Update current settings for display
+                    settings_theme = profile.theme
+                    settings_email_notifications = profile.email_notifications
+                    settings_desktop_notifications = profile.desktop_notifications
+                    settings_allow_dm_from_non_contacts = profile.allow_dm_from_non_contacts
+                
+            elif action == 'change_password':
+                # Handle password change
+                current_password = request.POST.get('current_password', '')
+                new_password = request.POST.get('new_password', '')
+                confirm_password = request.POST.get('confirm_password', '')
+                
+                if not user.check_password(current_password):
+                    password_error = 'Current password is incorrect.'
+                elif new_password != confirm_password:
+                    password_error = 'New passwords do not match.'
+                elif len(new_password) < 8 or not any(c.isupper() for c in new_password) or not any(c.isdigit() for c in new_password):
+                    password_error = 'Password must be at least 8 characters long and contain at least one uppercase letter and one number.'
+                else:
+                    user.set_password(new_password)
+                    user.save()
+                    update_session_auth_hash(request, user)
+                    if profile:
+                        profile.password_last_changed = timezone.now()
+                        profile.save()
+                    settings_saved = True
+                    password_last_changed = timezone.now()
+            
+            elif action == 'toggle_2fa':
+                # Handle 2FA toggle (simplified version)
+                verification_code = request.POST.get('verification_code', '')
+                confirm_password = request.POST.get('confirm_password', '')
+                
+                if settings_2fa_enabled:
+                    # Disable 2FA
+                    if not user.check_password(confirm_password):
+                        twofa_error = 'Password is incorrect.'
+                    else:
+                        if profile:
+                            profile.two_factor_enabled = False
+                            profile.save()
+                        settings_2fa_enabled = False
+                        twofa_changed = True
+                else:
+                    # Enable 2FA (simplified - in production, use proper TOTP)
+                    if len(verification_code) != 6:
+                        twofa_error = 'Please enter a valid 6-digit verification code.'
+                    else:
+                        if profile:
+                            profile.two_factor_enabled = True
+                            profile.save()
+                        settings_2fa_enabled = True
+                        twofa_changed = True
+            
+            elif action == 'deactivate':
+                # Handle account deactivation
+                user.is_active = False
+                user.save()
+                return redirect('users:logout')
+            
+            elif action == 'delete':
+                # Handle account deletion
+                if profile:
+                    profile.delete()
+                user.delete()
+                return redirect('users:login')
+        
+        # Update context with settings data
+        ctx.update({
+            'settings_theme': settings_theme,
+            'settings_email_notifications': settings_email_notifications,
+            'settings_desktop_notifications': settings_desktop_notifications,
+            'settings_allow_dm_from_non_contacts': settings_allow_dm_from_non_contacts,
+            'settings_2fa_enabled': settings_2fa_enabled,
+            'settings_saved': settings_saved,
+            'password_error': password_error,
+            'twofa_changed': twofa_changed,
+            'twofa_error': twofa_error,
+            'password_last_changed': password_last_changed,
+        })
+
+    if template_file == 'faq.html':
+        # Handle FAQ data
+        from .models import Faq
+        
+        # Get all published FAQs
+        all_faqs = Faq.objects.filter(is_published=True).order_by('order', 'id')
+        
+        # Get featured FAQs (first few or marked as featured)
+        featured_faqs = all_faqs[:6]  # First 6 FAQs as featured
+        
+        # Group FAQs by category
+        faq_categories = {}
+        for faq in all_faqs:
+            category = faq.category or 'general'
+            if category not in faq_categories:
+                faq_categories[category] = []
+            faq_categories[category].append(faq)
+        
+        # Create FAQ sections for template
+        faq_sections = []
+        category_info = {
+            'getting-started': {
+                'title': 'Getting Started',
+                'description': 'Learn the basics of using TicketHub',
+                'key': 'getting-started'
+            },
+            'tickets': {
+                'title': 'Tickets',
+                'description': 'Everything about creating and managing tickets',
+                'key': 'tickets'
+            },
+            'billing': {
+                'title': 'Billing & Payments',
+                'description': 'Payment methods, invoices, and subscription management',
+                'key': 'billing'
+            },
+            'account': {
+                'title': 'Account Management',
+                'description': 'Profile settings, security, and preferences',
+                'key': 'account'
+            },
+            'troubleshooting': {
+                'title': 'Troubleshooting',
+                'description': 'Common issues and how to resolve them',
+                'key': 'troubleshooting'
+            },
+            'general': {
+                'title': 'General',
+                'description': 'General questions and information',
+                'key': 'general'
+            }
+        }
+        
+        for category_key, info in category_info.items():
+            if category_key in faq_categories:
+                faq_sections.append({
+                    'key': category_key,
+                    'title': info['title'],
+                    'description': info['description'],
+                    'items': faq_categories[category_key]
+                })
+        
+        # Add any uncategorized FAQs
+        if 'general' in faq_categories and 'general' not in [s['key'] for s in faq_sections]:
+            faq_sections.append({
+                'key': 'general',
+                'title': 'General',
+                'description': 'General questions and information',
+                'items': faq_categories['general']
+            })
+        
+        ctx.update({
+            'featured_faqs': featured_faqs,
+            'faq_sections': faq_sections,
+        })
 
     return render(request, f"{base}{template_file}", ctx)
 
@@ -2317,6 +2601,24 @@ def admin_dashboard_page(request, page: str):
                 "performance_percent": perf,
             })
 
+        # Also create ratings_agent_perf for the agent performance table
+        ratings_agent_qs = (
+            User.objects.select_related('userprofile', 'userprofile__role')
+            .filter(userprofile__role__name='Agent')
+            .annotate(avg_rating=Avg('received_ratings__rating'), rating_count=Count('received_ratings', distinct=True))
+            .order_by('username')
+        )
+        ratings_agent_perf = []
+        for u in ratings_agent_qs:
+            name = (u.get_full_name() or '').strip() or u.username
+            ratings_agent_perf.append({
+                "name": name,
+                "initials": (name or '?')[:2].upper(),
+                "email": u.email,
+                "avg_rating": round(getattr(u, 'avg_rating', 0) or 0, 1),
+                "rating_count": getattr(u, 'rating_count', 0) or 0,
+            })
+
         ctx = {
             "report_total_tickets": total_tickets,
             "report_resolution_rate": resolution_rate,
@@ -2329,6 +2631,7 @@ def admin_dashboard_page(request, page: str):
             "report_overview_created_json": json.dumps(created_counts),
             "report_overview_resolved_json": json.dumps(resolved_counts),
             "report_agent_perf": agent_perf,
+            "ratings_agent_perf": ratings_agent_perf,
         }
 
     elif normalized == 'settings.html':

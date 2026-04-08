@@ -73,10 +73,37 @@ body.dark-theme {
     --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.25);
 }
 
-/* Page Layout */
-.page {
-    padding: 1.5rem;
-    margin: 0 auto;
+/* Light Theme Variables */
+body.light-theme {
+    /* Explicitly set light theme colors for consistency */
+    --accent: #14b8a6;
+    --accent-light: #99f6e4;
+    --accent-dark: #0f766e;
+    --accent-10: rgba(20, 184, 166, 0.1);
+    --accent-20: rgba(20, 184, 166, 0.2);
+    
+    --success: #10b981;
+    --success-light: #d1fae5;
+    --warning: #f59e0b;
+    --warning-light: #fef3c7;
+    --danger: #ef4444;
+    --danger-light: #fee2e2;
+    --danger-10: rgba(239, 68, 68, 0.1);
+    
+    --border: #e2e8f0;
+    --border-dark: #cbd5e1;
+    --border-light: #f1f5f9;
+    --text: #1e293b;
+    --text-muted: #64748b;
+    --text-light: #94a3b8;
+    --bg: #f8fafc;
+    --bg-elevated: #ffffff;
+    --bg-hover: #f1f5f9;
+    --card-bg: #ffffff;
+    
+    --shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
 }
 
 .page-header {
