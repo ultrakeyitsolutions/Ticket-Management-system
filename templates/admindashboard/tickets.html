@@ -322,7 +322,7 @@
                 const priorityBadge = badgeClassForPriority(t.priority);
                 const assignedTo = t.assigned_to_full_name || t.assigned_to_username || '-';
                 const created = t.created_at ? new Date(t.created_at).toLocaleString('sv-SE', { hour12: false }).replace('T', ' ') : '-';
-                const options = ['Open','In Progress','Resolved','Closed']
+                const options = ['Open','In Progress','Resolved']
                     .map(o => `<option value="${o}" ${String(t.status)===o?'selected':''}>${o}</option>`)
                     .join('');
                 return `

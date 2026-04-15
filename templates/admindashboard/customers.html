@@ -58,18 +58,17 @@
                                     <i class="bi bi-search"></i>
                                     <input type="text" id="customer-search" placeholder="Search customers...">
                                 </div>
-                                <select class="form-select filter-input">
-                                    <option>All Status</option>
-                                    <option>Active</option>
-                                    <option>Inactive</option>
-                                    <option>VIP</option>
+                                <select id="customer-status-filter" class="form-select filter-input">
+                                    <option value="">All Status</option>
+                                    <option value="active">Active</option>
+                                    <option value="inactive">Inactive</option>
                                 </select>
-                                <select class="form-select filter-input">
-                                    <option>Sort By</option>
-                                    <option>Name (A-Z)</option>
-                                    <option>Name (Z-A)</option>
-                                    <option>Newest First</option>
-                                    <option>Oldest First</option>
+                                <select id="customer-sort-filter" class="form-select filter-input">
+                                    <option value="">Sort By</option>
+                                    <option value="name_asc">Name (A-Z)</option>
+                                    <option value="name_desc">Name (Z-A)</option>
+                                    <option value="newest">Newest First</option>
+                                    <option value="oldest">Oldest First</option>
                                 </select>
                             </div>
                         </div>
@@ -254,8 +253,14 @@
             }
 
             tbody.innerHTML = customersList.map(c => {
-                const statusBadge = c.is_active ? 'bg-success' : (c.is_vip ? 'bg-info' : 'bg-warning');
-                const statusText = c.is_active ? 'Active' : (c.is_vip ? 'VIP' : 'Inactive');
+                let statusBadge, statusText;
+                if (c.is_active) {
+                    statusBadge = 'bg-success';
+                    statusText = 'Active';
+                } else {
+                    statusBadge = 'bg-warning';
+                    statusText = 'Inactive';
+                }
                 const initials = c.initials || (c.name || '??').slice(0,2).toUpperCase();
                 const phone = c.phone || '-';
                 const tickets = c.tickets_count ?? 0;
@@ -402,7 +407,12 @@
             }
             try {
                 const searchInput = document.getElementById('customer-search');
+                const statusFilter = document.getElementById('customer-status-filter');
+                const sortFilter = document.getElementById('customer-sort-filter');
+                
                 const search = (searchInput?.value || '').trim();
+                const status = (statusFilter?.value || '').trim();
+                const sort = (sortFilter?.value || '').trim();
                 
                 const params = new URLSearchParams({
                     page: CURRENT_PAGE.toString(),
@@ -411,6 +421,14 @@
                 
                 if (search) {
                     params.append('search', search);
+                }
+                
+                if (status) {
+                    params.append('status', status);
+                }
+                
+                if (sort) {
+                    params.append('ordering', sort);
                 }
                 
                 const res = await fetch(`/api/customers/?${params.toString()}`);
@@ -615,6 +633,13 @@
 
                         userIdInput.value = id;
                         userInfoInput.textContent = `${name} (${email})`;
+                        
+                        // Populate username field for accessibility
+                        const usernameInput = document.getElementById('set_password_username');
+                        if (usernameInput) {
+                            usernameInput.value = email || name || 'Unknown';
+                        }
+                        
                         passwordInput.value = '';
                         confirmInput.value = '';
 
@@ -792,11 +817,28 @@
             // Load customers table
             loadCustomers();
 
-            // Wire up search filter (status and sort filters will be implemented later)
+            // Wire up all filters
             const searchInput = document.getElementById('customer-search');
+            const statusFilter = document.getElementById('customer-status-filter');
+            const sortFilter = document.getElementById('customer-sort-filter');
+            
             if (searchInput){
                 searchInput.addEventListener('input', function() {
                     CURRENT_PAGE = 1; // Reset to page 1 on search
+                    loadCustomers();
+                });
+            }
+            
+            if (statusFilter){
+                statusFilter.addEventListener('change', function() {
+                    CURRENT_PAGE = 1; // Reset to page 1 on filter change
+                    loadCustomers();
+                });
+            }
+            
+            if (sortFilter){
+                sortFilter.addEventListener('change', function() {
+                    CURRENT_PAGE = 1; // Reset to page 1 on filter change
                     loadCustomers();
                 });
             }

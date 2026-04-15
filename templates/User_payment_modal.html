@@ -29,24 +29,45 @@
 
           <i class="fas fa-credit-card fa-3x text-warning mb-3"></i>
 
-          <h6>Your {% if days_expired > 0 %}Subscription Has Expired{% else %}Trial Period Has Expired{% endif %}</h6>
+          <h6>
+            {% if days_expired > 0 %}
+              Subscription Has Expired
+            {% elif days_expired == 0 %}
+              Trial Period Active
+            {% else %}
+              Trial Period Has Expired
+            {% endif %}
+          </h6>
 
           <p class="text-muted">
 
             {% if days_expired > 0 %}
 
             Your {{ plan_name|default:"trial" }} subscription expired {% if expiry_date %}on {{ expiry_date|date:"M d,
-            Y" }}{% endif %} ({{ days_expired }} days ago). To continue using the dashboard, please select a payment
+            Y" }}{% endif %} ({{ days_expired }} days ago). To continue using dashboard, please select a payment
             plan.
+
+            {% elif days_expired == 0 %}
+
+            Your {{ plan_name|default:"trial" }} period is still active! You have full access to all features. 
+            If you're enjoying the dashboard, you can upgrade to a paid plan now to continue uninterrupted access after your trial ends.
 
             {% else %}
 
-            Your {{ plan_name|default:"trial" }} period has expired. To continue using the dashboard, please select a
+            Your {{ plan_name|default:"trial" }} period has expired. To continue using dashboard, please select a
             payment plan.
 
             {% endif %}
 
           </p>
+
+          {% if days_expired == 0 %}
+          <div class="alert alert-info mb-3">
+            <i class="fas fa-info-circle me-2"></i>
+            <strong>Trial Active!</strong><br>
+            <small>Your trial expires on {% if expiry_date %}{{ expiry_date|date:"M d, Y" }}{% endif %}. Upgrade now to continue using all features without interruption.</small>
+          </div>
+          {% endif %}
 
         </div>
 
@@ -192,7 +213,16 @@
 
         </button>
 
-        <button type="button" class="btn btn-success" id="proceedToPaymentBtn"
+        {% if days_expired == 0 %}
+        <button type="button" class="btn btn-primary me-2" id="upgradeNowBtn"
+          onclick="event.preventDefault(); upgradeTrialNow(); return false;" disabled>
+
+          <i class="fas fa-rocket me-1"></i> Upgrade Now
+
+        </button>
+        {% endif %}
+        
+        <button type="button" class="btn {% if days_expired == 0 %}btn-outline-success{% else %}btn-success{% endif %}" id="proceedToPaymentBtn"
           onclick="event.preventDefault(); proceedToRazorpay(); return false;" disabled>
 
           <i class="fas fa-credit-card me-1"></i> Pay with Razorpay

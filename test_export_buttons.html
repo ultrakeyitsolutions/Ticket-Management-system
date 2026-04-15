@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Export Test</title>
+</head>
+<body>
+    <h1>Export Functionality Test</h1>
+    
+    <h2>Test Export Buttons</h2>
+    
+    <button onclick="testExport('csv', 'ticket_summary')">
+        Test Ticket Summary CSV
+    </button>
+    
+    <button onclick="testExport('pdf', 'ticket_summary')">
+        Test Ticket Summary PDF
+    </button>
+    
+    <button onclick="testExport('csv', 'agent_performance')">
+        Test Agent Performance CSV
+    </button>
+    
+    <button onclick="testExport('pdf', 'agent_performance')">
+        Test Agent Performance PDF
+    </button>
+    
+    <button onclick="testExport('csv', 'custom', 'status')">
+        Test Custom Status CSV
+    </button>
+    
+    <button onclick="testExport('pdf', 'custom', 'priority')">
+        Test Custom Priority PDF
+    </button>
+    
+    <script>
+        function testExport(format, reportType, metric) {
+            const params = new URLSearchParams();
+            params.set('report_type', reportType);
+            if (metric) {
+                params.set('metric', metric);
+            }
+            
+            const url = `/dashboard/admin-dashboard/reports/export/${format}/?` + params.toString();
+            console.log('Testing export URL:', url);
+            
+            // Open in new window to test
+            window.open(url, '_blank');
+        }
+    </script>
+</body>
+</html>

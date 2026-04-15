@@ -1,233 +1,275 @@
 {% extends 'superadmin/base.html' %}
-{% load static %}
+{% block title %}Edit Plan · Super Admin{% endblock %}
 
-{% block title %}Edit Plan - SuperAdmin{% endblock %}
+{% block head %}
+<style>
+  .page-header {
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    border-radius: 16px;
+    padding: 1.5rem;
+    color: #fff;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    margin-bottom: 2rem;
+  }
+
+  .form-card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    border: 1px solid #e5e7eb;
+    overflow: hidden;
+  }
+
+  .form-header {
+    background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+    padding: 1.5rem;
+    border-bottom: 1px solid #e5e7eb;
+  }
+
+  .form-body {
+    padding: 2rem;
+  }
+
+  .form-group {
+    margin-bottom: 1.5rem;
+  }
+
+  .form-label {
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 0.5rem;
+    display: block;
+  }
+
+  .form-control {
+    border: 2px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    font-size: 0.95rem;
+    transition: all 0.3s ease;
+  }
+
+  .form-control:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(110, 142, 251, 0.1);
+    outline: none;
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    border: none;
+    border-radius: 8px;
+    padding: 0.75rem 2rem;
+    font-weight: 600;
+    color: white;
+    transition: all 0.3s ease;
+  }
+
+  .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(110, 142, 251, 0.3);
+  }
+
+  .btn-secondary {
+    background: #6b7280;
+    border: none;
+    border-radius: 8px;
+    padding: 0.75rem 2rem;
+    font-weight: 600;
+    color: white;
+    transition: all 0.3s ease;
+  }
+
+  .btn-secondary:hover {
+    background: #4b5563;
+    transform: translateY(-2px);
+  }
+
+  .alert {
+    border-radius: 8px;
+    border: none;
+    padding: 1rem 1.5rem;
+  }
+
+  .help-text {
+    font-size: 0.875rem;
+    color: #6b7280;
+    margin-top: 0.25rem;
+  }
+
+  .plan-info {
+    background: #f8fafc;
+    border-left: 4px solid var(--primary-color);
+    padding: 1rem;
+    border-radius: 0 8px 8px 0;
+    margin-bottom: 1.5rem;
+  }
+</style>
+{% endblock %}
 
 {% block content %}
-<div class="container-fluid">
-    <div class="row">
-        <div class="col-12">
-            <!-- Page Header -->
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <div>
-                    <nav aria-label="breadcrumb">
-                        <ol class="breadcrumb">
-                            <li class="breadcrumb-item">
-                                <a href="{% url 'superadmin:plans_list' %}">Plans</a>
-                            </li>
-                            <li class="breadcrumb-item active">Edit Plan</li>
-                        </ol>
-                    </nav>
-                    <h1 class="h3 mb-0">Edit Plan</h1>
-                    <p class="text-muted mb-0">Modify subscription plan details</p>
-                </div>
-                <div>
-                    <a href="{% url 'superadmin:plans_list' %}" class="btn btn-outline-secondary">
-                        <i class="bi bi-arrow-left me-2"></i>Back to Plans
-                    </a>
-                </div>
-            </div>
+<div class="container-fluid py-3">
 
-            <!-- Form Card -->
-            <div class="card sa-card">
-                <div class="card-body">
-                    <form method="POST" action="{% url 'superadmin:plan_edit' plan.id %}">
-                        {% csrf_token %}
-                        
-                        <!-- Basic Information -->
-                        <div class="row mb-4">
-                            <div class="col-12">
-                                <h5 class="mb-3">
-                                    <i class="bi bi-info-circle me-2 text-primary"></i>Basic Information
-                                </h5>
-                                <hr class="mt-0">
-                            </div>
-                            
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="planName" class="form-label">Plan Name <span class="text-danger">*</span></label>
-                                    <input type="text" class="form-control" id="planName" name="name" value="{{ plan.name }}" required>
-                                    <div class="form-text">Name of subscription plan</div>
-                                </div>
-                            </div>
-                            
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="planPrice" class="form-label">Price <span class="text-danger">*</span></label>
-                                    <div class="input-group">
-                                        <span class="input-group-text">₹</span>
-                                        <input type="number" class="form-control" id="planPrice" name="price" value="{{ plan.price }}" step="0.01" min="0" required>
-                                    </div>
-                                    <div class="form-text">Price per billing cycle</div>
-                                </div>
-                            </div>
-                            
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="billingCycle" class="form-label">Billing Cycle <span class="text-danger">*</span></label>
-                                    <select class="form-select" id="billingCycle" name="billing_cycle" required>
-                                        <option value="">Select billing cycle</option>
-                                        <option value="monthly" {% if plan.billing_cycle == 'monthly' %}selected{% endif %}>Monthly</option>
-                                        <option value="quarterly" {% if plan.billing_cycle == 'quarterly' %}selected{% endif %}>Quarterly</option>
-                                        <option value="annually" {% if plan.billing_cycle == 'annually' %}selected{% endif %}>Annually</option>
-                                    </select>
-                                    <div class="form-text">How often the plan is billed</div>
-                                </div>
-                            </div>
-                            
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="planStatus" class="form-label">Status <span class="text-danger">*</span></label>
-                                    <select class="form-select" id="planStatus" name="status" required>
-                                        <option value="">Select status</option>
-                                        <option value="active" {% if plan.status == 'active' %}selected{% endif %}>Active</option>
-                                        <option value="inactive" {% if plan.status == 'inactive' %}selected{% endif %}>Inactive</option>
-                                    </select>
-                                    <div class="form-text">Whether the plan is currently available</div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- Resources -->
-                        <div class="row mb-4">
-                            <div class="col-12">
-                                <h5 class="mb-3">
-                                    <i class="bi bi-database me-2 text-success"></i>Resources & Limits
-                                </h5>
-                                <hr class="mt-0">
-                            </div>
-                            
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="maxUsers" class="form-label">Maximum Users <span class="text-danger">*</span></label>
-                                    <input type="number" class="form-control" id="maxUsers" name="users" value="{{ plan.users }}" min="1" max="999" required>
-                                    <div class="form-text">Maximum number of users allowed (999 for unlimited)</div>
-                                </div>
-                            </div>
-                            
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="storage" class="form-label">Storage <span class="text-danger">*</span></label>
-                                    <input type="text" class="form-control" id="storage" name="storage" value="{{ plan.storage }}" placeholder="e.g., 10GB, 100GB" required>
-                                    <div class="form-text">Storage limit for the plan</div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- Features -->
-                        <div class="row mb-4">
-                            <div class="col-12">
-                                <h5 class="mb-3">
-                                    <i class="bi bi-star me-2 text-warning"></i>Features
-                                </h5>
-                                <hr class="mt-0">
-                            </div>
-                            
-                            <div class="col-12">
-                                <div class="row">
-                                    <div class="col-md-4">
-                                        <div class="form-check mb-3">
-                                            <input class="form-check-input" type="checkbox" id="basicSupport" name="features" value="Basic Support" {% if 'Basic Support' in plan.features %}checked{% endif %}>
-                                            <label class="form-check-label" for="basicSupport">
-                                                Basic Support
-                                            </label>
-                                        </div>
-                                    </div>
-                                    
-                                    <div class="col-md-4">
-                                        <div class="form-check mb-3">
-                                            <input class="form-check-input" type="checkbox" id="prioritySupport" name="features" value="Priority Support" {% if 'Priority Support' in plan.features %}checked{% endif %}>
-                                            <label class="form-check-label" for="prioritySupport">
-                                                Priority Support
-                                            </label>
-                                        </div>
-                                    </div>
-                                    
-                                    <div class="col-md-4">
-                                        <div class="form-check mb-3">
-                                            <input class="form-check-input" type="checkbox" id="247Support" name="features" value="24/7 Support" {% if '24/7 Support' in plan.features %}checked{% endif %}>
-                                            <label class="form-check-label" for="247Support">
-                                                24/7 Support
-                                            </label>
-                                        </div>
-                                    </div>
-                                    
-                                    <div class="col-md-4">
-                                        <div class="form-check mb-3">
-                                            <input class="form-check-input" type="checkbox" id="advancedAnalytics" name="features" value="Advanced Analytics" {% if 'Advanced Analytics' in plan.features %}checked{% endif %}>
-                                            <label class="form-check-label" for="advancedAnalytics">
-                                                Advanced Analytics
-                                            </label>
-                                        </div>
-                                    </div>
-                                    
-                                    <div class="col-md-4">
-                                        <div class="form-check mb-3">
-                                            <input class="form-check-input" type="checkbox" id="apiAccess" name="features" value="API Access" {% if 'API Access' in plan.features %}checked{% endif %}>
-                                            <label class="form-check-label" for="apiAccess">
-                                                API Access
-                                            </label>
-                                        </div>
-                                    </div>
-                                    
-                                    <div class="col-md-4">
-                                        <div class="form-check mb-3">
-                                            <input class="form-check-input" type="checkbox" id="customBranding" name="features" value="Custom Branding" {% if 'Custom Branding' in plan.features %}checked{% endif %}>
-                                            <label class="form-check-label" for="customBranding">
-                                                Custom Branding
-                                            </label>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- Form Actions -->
-                        <div class="d-flex gap-2">
-                            <button type="submit" class="btn btn-primary">
-                                <i class="bi bi-check-circle me-2"></i>Update Plan
-                            </button>
-                            <a href="{% url 'superadmin:plans_list' %}" class="btn btn-secondary">
-                                <i class="bi bi-x-circle me-2"></i>Cancel
-                            </a>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
+  <!-- Breadcrumb Navigation -->
+  <nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item">
+        <a href="{% url 'superadmin:superadmin_dashboard' %}">Dashboard</a>
+      </li>
+      <li class="breadcrumb-item">
+        <a href="{% url 'superadmin:plans_list' %}">Subscription Plans</a>
+      </li>
+      <li class="breadcrumb-item active">Edit Plan</li>
+    </ol>
+  </nav>
+
+  <!-- Header -->
+  <div class="page-header d-flex justify-content-between align-items-center">
+    <div>
+      <div class="text-uppercase small opacity-75">Management</div>
+      <h4>Edit Plan: {{ plan.name }}</h4>
     </div>
+    <div>
+      <a href="{% url 'superadmin:plans_list' %}" class="btn btn-light">
+        <i class="bi bi-arrow-left me-2"></i>Back to Plans
+      </a>
+    </div>
+  </div>
+
+  <!-- Plan Info -->
+  <div class="plan-info">
+    <div class="d-flex justify-content-between align-items-center">
+      <div>
+        <h6 class="mb-1">Current Plan Details</h6>
+        <div class="text-muted small">
+          Price: ¥{{ plan.price }}/{{ plan.billing_cycle }} | 
+          Tickets: {{ plan.tickets }} | 
+          Storage: {{ plan.storage }} | 
+          Status: {% if plan.is_active %}<span class="text-success">Active</span>{% else %}<span class="text-danger">Inactive</span>{% endif %}
+        </div>
+      </div>
+      <div class="text-end">
+        <small class="text-muted">Created: {{ plan.created_date|date:"M d, Y" }}</small>
+      </div>
+    </div>
+  </div>
+
+  <!-- Form -->
+  <div class="form-card">
+    <div class="form-header">
+      <h5 class="mb-0">Update Plan Information</h5>
+      <p class="text-muted mb-0">Modify the subscription plan details</p>
+    </div>
+    
+    <div class="form-body">
+      {% if messages %}
+        {% for message in messages %}
+          <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+          </div>
+        {% endfor %}
+      {% endif %}
+
+      <form method="post">
+        {% csrf_token %}
+        
+        <div class="row">
+          <div class="col-md-6">
+            <div class="form-group">
+              <label for="name" class="form-label">Plan Name *</label>
+              <input type="text" class="form-control" id="name" name="name" value="{{ plan.name }}" required
+                     placeholder="e.g., Basic, Standard, Premium">
+              <div class="help-text">Choose a descriptive name for your plan</div>
+            </div>
+          </div>
+          
+          <div class="col-md-6">
+            <div class="form-group">
+              <label for="price" class="form-label">Price (¥) *</label>
+              <input type="number" class="form-control" id="price" name="price" value="{{ plan.price }}" required
+                     step="0.01" min="0" placeholder="0.00">
+              <div class="help-text">Set the monthly/yearly price for this plan</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col-md-6">
+            <div class="form-group">
+              <label for="billing_cycle" class="form-label">Billing Cycle</label>
+              <select class="form-control" id="billing_cycle" name="billing_cycle">
+                {% for value, label in billing_cycles %}
+                  <option value="{{ value }}" {% if plan.billing_cycle == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+              </select>
+              <div class="help-text">Choose how often customers are billed</div>
+            </div>
+          </div>
+          
+          <div class="col-md-6">
+            <div class="form-group">
+              <label for="tickets" class="form-label">Number of Tickets</label>
+              <input type="number" class="form-control" id="tickets" name="tickets" 
+                     value="{{ plan.tickets }}" min="1" placeholder="5">
+              <div class="help-text">Maximum number of tickets allowed</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col-md-6">
+            <div class="form-group">
+              <label for="storage" class="form-label">Storage</label>
+              <input type="text" class="form-control" id="storage" name="storage" 
+                     value="{{ plan.storage }}" placeholder="10GB">
+              <div class="help-text">Storage space included (e.g., 1GB, 2GB, 3GB, 4GB, 10GB)</div>
+            </div>
+          </div>
+          
+          <div class="col-md-6">
+            <div class="form-group">
+              <label for="description" class="form-label">Description</label>
+              <textarea class="form-control" id="description" name="description" rows="3"
+                        placeholder="Plan description..."></textarea>
+              <div class="help-text">Brief description of what this plan includes</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="d-flex justify-content-between align-items-center mt-4">
+          <a href="{% url 'superadmin:plans_list' %}" class="btn btn-secondary">
+            <i class="bi bi-x-circle me-2"></i>Cancel
+          </a>
+          <button type="submit" class="btn btn-primary">
+            <i class="bi bi-check-circle me-2"></i>Update Plan
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
 </div>
 
+{% endblock %}
+
+{% block scripts %}
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const form = document.querySelector('form');
-    
-    form.addEventListener('submit', function(e) {
-        // Basic validation
-        const name = document.getElementById('planName').value.trim();
-        const price = document.getElementById('planPrice').value.trim();
-        
-        if (!name || !price) {
-            e.preventDefault();
-            alert('Please fill in all required fields.');
-            return;
-        }
-        
-        // Validate price
-        if (parseFloat(price) < 0) {
-            e.preventDefault();
-            alert('Price must be a positive number.');
-            return;
-        }
-        
-        // Validate users
-        const users = document.getElementById('maxUsers').value;
-        if (parseInt(users) < 1 || parseInt(users) > 999) {
-            e.preventDefault();
-            alert('Users must be between 1 and 999.');
-            return;
-        }
-    });
+// Auto-format storage input
+document.getElementById('storage').addEventListener('input', function(e) {
+  let value = e.target.value.toUpperCase();
+  if (!value.endsWith('GB')) {
+    value = value.replace(/[^0-9]/g, '') + 'GB';
+  }
+  e.target.value = value;
+});
+
+// Auto-format price input
+document.getElementById('price').addEventListener('blur', function(e) {
+  let value = parseFloat(e.target.value);
+  if (!isNaN(value)) {
+    e.target.value = value.toFixed(2);
+  }
 });
 </script>
 {% endblock %}

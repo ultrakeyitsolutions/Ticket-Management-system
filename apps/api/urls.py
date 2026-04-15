@@ -5,7 +5,10 @@ app_name = 'api'
 
 urlpatterns = [
     path('admin-users/', views.admin_users_api, name='admin_users_api'),
+    path('agents/', views.agents_api, name='agents_api'),
     path('customers/', views.customers_api, name='customers_api'),
     path('users/<int:user_id>/', views.user_detail_api, name='user_detail_api'),
     path('users/<int:user_id>/set-password/', views.set_password_api, name='set_password_api'),
+    path('check-email/', views.check_email_api, name='check_email_api'),
+    path('settings/', views.settings_api, name='settings_api'),
 ]

@@ -116,7 +116,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Handle theme color selection
     const themeColors = document.querySelectorAll('.theme-color');
-    const primaryColorInput = document.getElementById('primaryColor');
+    const primaryColorInput = document.querySelector('input[name="primary_color"]');
     
     if (themeColors.length > 0) {
         themeColors.forEach(color => {

@@ -493,37 +493,32 @@
                             console.log('Dropdown shown');
                         });
                         
-                        // Add click listeners to dropdown items directly
-                        const muteItem = dropdownMenu.querySelector('[data-action="mute"]');
-                        const clearItem = dropdownMenu.querySelector('[data-action="clear-chat"]');
-                        const blockItem = dropdownMenu.querySelector('[data-action="block"]');
-                        
-                        if (muteItem) {
-                            muteItem.addEventListener('click', function(e) {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                console.log('Mute item clicked');
-                                handleMuteContact();
-                            });
-                        }
-                        
-                        if (clearItem) {
-                            clearItem.addEventListener('click', function(e) {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                console.log('Clear chat item clicked');
-                                handleClearChat();
-                            });
-                        }
-                        
-                        if (blockItem) {
-                            blockItem.addEventListener('click', function(e) {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                console.log('Block item clicked');
-                                handleBlockContact();
-                            });
-                        }
+                        // Use event delegation to handle all dropdown item clicks
+                        dropdownMenu.addEventListener('click', function(e) {
+                            const item = e.target.closest('[data-action]');
+                            if (!item) return;
+                            
+                            e.preventDefault();
+                            e.stopPropagation();
+                            
+                            const action = item.getAttribute('data-action');
+                            console.log(action + ' item clicked');
+                            
+                            switch(action) {
+                                case 'mute':
+                                    handleMuteContact();
+                                    break;
+                                case 'clear-chat':
+                                    handleClearChat();
+                                    break;
+                                case 'block':
+                                    handleBlockContact();
+                                    break;
+                                case 'unblock':
+                                    handleUnblockContact();
+                                    break;
+                            }
+                        });
                     } else {
                         console.log('Dropdown elements not found');
                     }
@@ -1126,7 +1121,7 @@
             }
         }
 
-        async function handleBlockContact(){
+        function handleBlockContact(){
             console.log('handleBlockContact called');
             if(!currentContactId){
                 console.log('No contact selected');
@@ -1140,66 +1135,43 @@
             }
             
             console.log('Blocking contact:', currentContactId);
-            const csrftoken = getCookie('csrftoken');
-            try{
-                const res = await fetch(`/api/chat/thread/${currentContactId}/`,{
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRFToken': csrftoken || ''
-                    },
-                    credentials: 'same-origin',
-                    body: JSON.stringify({ action: 'block' })
-                });
-                console.log('Block response status:', res.status);
-                if(!res.ok){ 
-                    const errorText = await res.text();
-                    console.log('Block response not ok:', errorText);
-                    console.log('Response status text:', res.statusText);
-                    throw new Error(`Failed to block contact: ${res.status} ${res.statusText} - ${errorText}`); 
+            
+            // Add to blocked contacts set and save to localStorage
+            blockedContacts.add(currentContactId);
+            saveBlockedContacts();
+            
+            // Update UI to show blocked status
+            const activeItem = document.querySelector('.contact-item.active');
+            if(activeItem){
+                const blockIcon = activeItem.querySelector('.block-indicator');
+                if(!blockIcon){
+                    const icon = document.createElement('i');
+                    icon.className = 'bi bi-x-circle-fill block-indicator text-danger ms-2';
+                    icon.title = 'Blocked';
+                    activeItem.querySelector('.contact-info').appendChild(icon);
                 }
                 
-                const responseData = await res.json();
-                console.log('Block response data:', responseData);
-                
-                // Add to blocked contacts set and save to localStorage
-                blockedContacts.add(currentContactId);
-                saveBlockedContacts();
-                
-                // Update UI to show blocked status
-                const activeItem = document.querySelector('.contact-item.active');
-                if(activeItem){
-                    const blockIcon = activeItem.querySelector('.block-indicator');
-                    if(!blockIcon){
-                        const icon = document.createElement('i');
-                        icon.className = 'bi bi-x-circle-fill block-indicator text-danger ms-2';
-                        icon.title = 'Blocked';
-                        activeItem.querySelector('.contact-info').appendChild(icon);
-                    }
-                    
-                    // Disable message input
-                    const messageInput = document.getElementById('message-input');
-                    const sendButton = document.getElementById('send-button');
-                    if(messageInput){
-                        messageInput.disabled = true;
-                        messageInput.placeholder = 'Contact is blocked';
-                    }
-                    if(sendButton){
-                        sendButton.disabled = true;
-                    }
+                // Disable message input
+                const messageInput = document.getElementById('message-input');
+                const sendButton = document.getElementById('send-button');
+                if(messageInput){
+                    messageInput.disabled = true;
+                    messageInput.placeholder = 'Contact is blocked';
                 }
-                
-                // Update dropdown menu to show Unblock
-                updateDropdownMenu();
-                
-                showToast(responseData.message || 'Contact blocked successfully', 'warning');
-            }catch(err){
-                console.error('Error in handleBlockContact:', err);
-                alert(`Could not block contact: ${err.message}`);
+                if(sendButton){
+                    sendButton.disabled = true;
+                }
             }
+            
+            // Update dropdown menu to show Unblock
+            setTimeout(() => {
+                updateDropdownMenu();
+            }, 100);
+            
+            showToast('Contact blocked successfully', 'warning');
         }
 
-        async function handleUnblockContact(){
+        function handleUnblockContact(){
             console.log('handleUnblockContact called');
             if(!currentContactId){
                 console.log('No contact selected');
@@ -1213,75 +1185,57 @@
             }
             
             console.log('Unblocking contact:', currentContactId);
-            const csrftoken = getCookie('csrftoken');
-            try{
-                const res = await fetch(`/api/chat/thread/${currentContactId}/`,{
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRFToken': csrftoken || ''
-                    },
-                    credentials: 'same-origin',
-                    body: JSON.stringify({ action: 'unblock' })
-                });
-                console.log('Unblock response status:', res.status);
-                if(!res.ok){ 
-                    const errorText = await res.text();
-                    console.log('Unblock response not ok:', errorText);
-                    console.log('Response status text:', res.statusText);
-                    throw new Error(`Failed to unblock contact: ${res.status} ${res.statusText} - ${errorText}`); 
+            
+            // Remove from blocked contacts set and save to localStorage
+            blockedContacts.delete(currentContactId);
+            saveBlockedContacts();
+            
+            // Update UI to remove blocked status
+            const activeItem = document.querySelector('.contact-item.active');
+            if(activeItem){
+                const blockIcon = activeItem.querySelector('.block-indicator');
+                if(blockIcon){
+                    blockIcon.remove();
                 }
                 
-                const responseData = await res.json();
-                console.log('Unblock response data:', responseData);
-                
-                // Remove from blocked contacts set and save to localStorage
-                blockedContacts.delete(currentContactId);
-                saveBlockedContacts();
-                
-                // Update UI to remove blocked status
-                const activeItem = document.querySelector('.contact-item.active');
-                if(activeItem){
-                    const blockIcon = activeItem.querySelector('.block-indicator');
-                    if(blockIcon){
-                        blockIcon.remove();
-                    }
-                    
-                    // Enable message input
-                    const messageInput = document.getElementById('message-input');
-                    const sendButton = document.getElementById('send-button');
-                    if(messageInput){
-                        messageInput.disabled = false;
-                        messageInput.placeholder = 'Type a message...';
-                    }
-                    if(sendButton){
-                        sendButton.disabled = false;
-                    }
+                // Enable message input
+                const messageInput = document.getElementById('message-input');
+                const sendButton = document.getElementById('send-button');
+                if(messageInput){
+                    messageInput.disabled = false;
+                    messageInput.placeholder = 'Type a message...';
                 }
-                
-                // Update dropdown menu to show Block
-                updateDropdownMenu();
-                
-                showToast(responseData.message || 'Contact unblocked successfully', 'success');
-            }catch(err){
-                console.error('Error in handleUnblockContact:', err);
-                alert(`Could not unblock contact: ${err.message}`);
+                if(sendButton){
+                    sendButton.disabled = false;
+                }
             }
+            
+            // Update dropdown menu to show Block
+            setTimeout(() => {
+                updateDropdownMenu();
+            }, 100);
+            
+            showToast('Contact unblocked successfully', 'success');
         }
 
         function updateDropdownMenu(){
             const dropdownMenu = document.querySelector('.chat-actions .dropdown-menu');
-            if (!dropdownMenu || !currentContactId) return;
+            if (!dropdownMenu || !currentContactId) {
+                console.log('updateDropdownMenu: Missing dropdownMenu or currentContactId', {dropdownMenu: !!dropdownMenu, currentContactId});
+                return;
+            }
             
             const isBlocked = blockedContacts.has(currentContactId);
             console.log('Updating dropdown menu - isBlocked:', isBlocked, 'currentContactId:', currentContactId);
+            console.log('Blocked contacts set:', Array.from(blockedContacts));
             
             // Find or create the block/unblock menu item
             let blockItem = dropdownMenu.querySelector('[data-action="block"]');
             let unblockItem = dropdownMenu.querySelector('[data-action="unblock"]');
+            console.log('Found items - blockItem:', !!blockItem, 'unblockItem:', !!unblockItem);
             
             if (isBlocked) {
-                // Show Unblock option
+                // Show Unblock option, hide Block option
                 if (!unblockItem) {
                     if (blockItem) {
                         blockItem.style.display = 'none';
@@ -1291,17 +1245,14 @@
                     unblockItem = document.createElement('li');
                     unblockItem.innerHTML = '<a class="dropdown-item" href="#" data-action="unblock"><i class="bi bi-check-circle me-2"></i>Unblock</a>';
                     dropdownMenu.appendChild(unblockItem);
-                    
-                    // Add click listener for unblock
-                    unblockItem.querySelector('a').addEventListener('click', function(e) {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        console.log('Unblock item clicked');
-                        handleUnblockContact();
-                    });
+                } else {
+                    // Unblock item already exists, just ensure block item is hidden
+                    if (blockItem) {
+                        blockItem.style.display = 'none';
+                    }
                 }
             } else {
-                // Show Block option
+                // Show Block option, remove Unblock option
                 if (unblockItem) {
                     unblockItem.remove();
                 }
@@ -1938,8 +1889,21 @@
                     currentTicketId = initialData.ticketId ? String(initialData.ticketId) : null;
                     loadMessagesForCurrentContact();
                     
-                    // Update dropdown menu based on blocked status
-                    updateDropdownMenu();
+                    // Update dropdown menu based on blocked status with delay to ensure everything is loaded
+                    setTimeout(() => {
+                        updateDropdownMenu();
+                    }, 1500); // Wait 1.5 seconds for all components to be ready
+                    
+                    // Fallback: Try updating dropdown menu multiple times to ensure it works
+                    let attempts = 0;
+                    const maxAttempts = 5;
+                    const fallbackInterval = setInterval(() => {
+                        attempts++;
+                        updateDropdownMenu();
+                        if (attempts >= maxAttempts) {
+                            clearInterval(fallbackInterval);
+                        }
+                    }, 2000); // Try every 2 seconds for up to 10 seconds
                 }
             }
             

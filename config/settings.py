@@ -51,6 +51,7 @@ INSTALLED_APPS = [
     "superadmin",
     "payments",
     "core",
+    "subscriptions",
 ]
 
 MIDDLEWARE = [
@@ -213,3 +214,4 @@ PAYMENT_CURRENCY = "INR"
 # Trial Settings
 FREE_TRIAL_DURATION_DAYS = 7
 FREE_TRIAL_PLAN_NAME = "Basic"
+FREE_TRIAL_AUTO_ASSIGN = True

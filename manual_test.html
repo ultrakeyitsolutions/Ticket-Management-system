@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Profile Remove Test</title>
+</head>
+<body>
+    <h1>Manual Test Instructions</h1>
+    
+    <h2>Steps to test the remove functionality:</h2>
+    
+    <ol>
+        <li>Navigate to: <a href="http://127.0.0.1:8000/dashboard/admin-dashboard/profile.html/" target="_blank">Admin Profile Page</a></li>
+        <li>Login with admin credentials</li>
+        <li>Upload a profile picture first (if you don't have one)</li>
+        <li>Click the "Remove" button next to your profile picture</li>
+        <li>Confirm the removal in the dialog</li>
+        <li>The page should reload and the profile picture should be gone</li>
+    </ol>
+    
+    <h2>What was fixed:</h2>
+    <ul>
+        <li>Added <code>remove_profile_picture</code> action handler in the backend view</li>
+        <li>Added proper profile picture deletion logic</li>
+        <li>Added handling for address fields (city, state, country, address)</li>
+        <li>The frontend JavaScript was already correctly implemented</li>
+    </ul>
+    
+    <h2>Technical Details:</h2>
+    <p>The issue was in <code>apps/dashboards/views.py</code> in the <code>admin_dashboard_page</code> function. The view was missing the handler for the <code>remove_profile_picture</code> action that the frontend JavaScript was sending.</p>
+    
+    <p><strong>Before:</strong> The remove button would submit the form but the backend would ignore the action, so nothing would happen.</p>
+    
+    <p><strong>After:</strong> The backend now properly handles the remove_profile_picture action, deletes the profile picture file, sets the field to None, and saves the profile.</p>
+    
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        code { background: #f4f4f4; padding: 2px 4px; border-radius: 3px; }
+        a { color: #0066cc; }
+    </style>
+</body>
+</html>

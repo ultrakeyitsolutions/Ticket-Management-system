@@ -107,6 +107,9 @@ def payment_process(request, subscription_id):
                 subscription.status = 'active'
                 subscription.start_date = timezone.now().date()
                 
+                # END TRIAL IMMEDIATELY when payment is made during trial
+                subscription.trial_end_date = None  # Clear trial end date to end trial immediately
+                
                 # Set end date based on billing cycle
                 if plan.billing_cycle == 'monthly':
                     subscription.end_date = timezone.now().date() + timezone.timedelta(days=30)
@@ -526,6 +529,9 @@ def razorpay_verify_payment(request):
                 subscription.status = 'active'
                 subscription.plan = plan
                 subscription.start_date = timezone.now().date()
+                
+                # END TRIAL IMMEDIATELY when payment is made during trial
+                subscription.trial_end_date = None  # Clear trial end date to end trial immediately
                 
                 # Set end date based on billing cycle
                 if plan and plan.billing_cycle == 'yearly':

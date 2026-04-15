@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Share Functionality</title>
+</head>
+<body>
+    <h1>Test Share Email Functionality</h1>
+    
+    <h2>Current shareViaEmail function:</h2>
+    <pre>
+function shareViaEmail() {
+    // Get the actual email from the page content
+    const profileEmail = 'yash2@gmail.com';
+    const profileName = 'yash';
+    console.log('Profile email from template:', profileEmail);
+    
+    const subject = encodeURIComponent(`Profile: ${profileName}`);
+    const body = encodeURIComponent(`Check out my profile: http://127.0.0.1:8000/dashboard/agent-dashboard/profile.html
+
+Profile Details:
+Name: ${profileName}
+Role: Agent
+Email: ${profileEmail}
+Phone: Not set
+Department: Not set
+Tickets Closed: 0
+Average Rating: 0.0/5
+
+View full profile at: http://127.0.0.1:8000/dashboard/agent-dashboard/profile.html`);
+    
+    window.open(`mailto:${profileEmail}?subject=${subject}&body=${body}`, '_blank');
+}
+    </pre>
+    
+    <button onclick="testShare()">Test Share Function</button>
+    
+    <script>
+        function testShare() {
+            shareViaEmail();
+        }
+        
+        // Copy the fixed function from the actual file
+        function shareViaEmail() {
+            // Get the actual email from the page content
+            const profileEmail = '{{ profile_email|default:request.user.email }}';
+            const profileName = '{{ profile_full_name|default:request.user.get_full_name|default:request.user.username }}';
+            console.log('Profile email from template:', profileEmail);
+            
+            const subject = encodeURIComponent(`Profile: ${profileName}`);
+            const body = encodeURIComponent(`Check out my profile: ${window.location.href}
+
+Profile Details:
+Name: ${profileName}
+Role: {{ profile_role|default:"Agent" }}
+Email: ${profileEmail}
+Phone: {{ profile_phone|default:"Not set" }}
+Department: {{ profile_obj.department|default:"Not set" }}
+Tickets Closed: {{ profile_tickets_closed|default:0 }}
+Average Rating: {{ profile_avg_rating_display|default:"0.0/5" }}
+
+View full profile at: ${window.location.href}`);
+            
+            window.open(`mailto:${profileEmail}?subject=${subject}&body=${body}`, '_blank');
+        }
+    </script>
+</body>
+</html>

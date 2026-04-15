@@ -1,4 +1,7 @@
 from django.db import models
+from django.contrib.auth.models import User
+from tickets.models import Ticket
+import uuid
 
 # Create your models here.
 
@@ -69,3 +72,107 @@ class Faq(models.Model):
 
     def __str__(self):
         return self.question
+
+
+class Notification(models.Model):
+    """Notification model for admin dashboard"""
+    
+    NOTIFICATION_TYPES = [
+        ('ticket', 'Ticket'),
+        ('system', 'System'),
+        ('alert', 'Alert'),
+        ('user', 'User'),
+        ('performance', 'Performance'),
+    ]
+    
+    PRIORITY_LEVELS = [
+        ('low', 'Low'),
+        ('medium', 'Medium'),
+        ('high', 'High'),
+        ('urgent', 'Urgent'),
+    ]
+    
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    recipient = models.ForeignKey(User, on_delete=models.CASCADE, related_name='admin_notifications')
+    title = models.CharField(max_length=255)
+    message = models.TextField()
+    notification_type = models.CharField(max_length=20, choices=NOTIFICATION_TYPES, default='system')
+    priority = models.CharField(max_length=10, choices=PRIORITY_LEVELS, default='medium')
+    
+    # Optional related objects
+    ticket = models.ForeignKey(Ticket, on_delete=models.SET_NULL, null=True, blank=True, related_name='notifications')
+    
+    # Status and timestamps
+    is_read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    read_at = models.DateTimeField(null=True, blank=True)
+    
+    # Action URLs
+    action_url = models.URLField(max_length=500, blank=True, null=True)
+    action_text = models.CharField(max_length=50, blank=True, null=True)
+    
+    class Meta:
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['recipient', 'is_read', '-created_at']),
+            models.Index(fields=['notification_type']),
+            models.Index(fields=['priority']),
+        ]
+    
+    def __str__(self):
+        return f"{self.title} - {self.recipient.username}"
+    
+    def mark_as_read(self):
+        """Mark notification as read"""
+        if not self.is_read:
+            self.is_read = True
+            self.read_at = models.timezone.now()
+            self.save(update_fields=['is_read', 'read_at'])
+    
+    @property
+    def icon_class(self):
+        """Return Bootstrap icon class based on notification type"""
+        icon_map = {
+            'ticket': 'bi-ticket-detailed',
+            'system': 'bi-gear',
+            'alert': 'bi-exclamation-triangle',
+            'user': 'bi-person',
+            'performance': 'bi-graph-up',
+        }
+        return icon_map.get(self.notification_type, 'bi-bell')
+    
+    @property
+    def css_class(self):
+        """Return CSS class for notification styling"""
+        class_map = {
+            'ticket': 'ticket',
+            'system': 'system',
+            'alert': 'warning',
+            'user': 'system',
+            'performance': 'warning',
+        }
+        return class_map.get(self.notification_type, 'system')
+    
+    @property
+    def time_ago(self):
+        """Return human readable time ago"""
+        from django.utils import timezone
+        import datetime
+        
+        now = timezone.now()
+        diff = now - self.created_at
+        
+        if diff < datetime.timedelta(minutes=1):
+            return "Just now"
+        elif diff < datetime.timedelta(hours=1):
+            minutes = int(diff.total_seconds() / 60)
+            return f"{minutes} minute{'s' if minutes != 1 else ''} ago"
+        elif diff < datetime.timedelta(days=1):
+            hours = int(diff.total_seconds() / 3600)
+            return f"{hours} hour{'s' if hours != 1 else ''} ago"
+        elif diff < datetime.timedelta(days=7):
+            days = diff.days
+            return f"{days} day{'s' if days != 1 else ''} ago"
+        else:
+            return self.created_at.strftime("%b %d, %Y")

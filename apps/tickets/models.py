@@ -23,6 +23,15 @@ class Ticket(models.Model):
         ('Technical', 'Technical'),
         ('Billing', 'Billing'),
         ('General', 'General'),
+        ('Support', 'Support'),
+        ('Others', 'Others'),
+    ]
+    
+    CHANNEL_CHOICES = [
+        ('Email', 'Email'),
+        ('Phone', 'Phone'),
+        ('Chat', 'Chat'),
+        ('Web', 'Web'),
     ]
     ticket_id = models.CharField(max_length=20, unique=True)
     title = models.CharField(max_length=200)
@@ -31,7 +40,9 @@ class Ticket(models.Model):
     assigned_to = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='assigned_tickets')
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Open')
     priority = models.CharField(max_length=20, choices=PRIORITY_CHOICES, default='Medium')
-    category = models.CharField(max_length=100, blank=True, null=True)
+    category = models.CharField(max_length=100, choices=CATEGORY_CHOICES, blank=True, null=True)
+    channel = models.CharField(max_length=20, choices=CHANNEL_CHOICES, default='Web', blank=True, null=True)
+    plan = models.ForeignKey('superadmin.Plan', on_delete=models.SET_NULL, null=True, blank=True, related_name='ticket_set')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

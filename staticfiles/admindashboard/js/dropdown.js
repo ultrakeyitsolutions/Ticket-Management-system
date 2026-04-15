@@ -163,7 +163,7 @@ setTimeout(() => {
    
     // Close action menus when clicking outside
     document.addEventListener('click', function(e) {
-        if (!e.target.closest('.action-menu-container')) {
+        if (!e.target || !e.target.closest('.action-menu-container')) {
             document.querySelectorAll('.action-menu-panel.active').forEach(panel => {
                 panel.classList.remove('active');
             });

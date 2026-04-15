@@ -1,7 +1,7 @@
 {% extends 'superadmin/base.html' %}
 {% load static %}
 
-{% block title %}Edit {{ company.name }} - Company - SuperAdmin{% endblock %}
+{% block title %}Edit Company - SuperAdmin{% endblock %}
 
 {% block content %}
 <div class="container-fluid">
@@ -9,15 +9,18 @@
         <div class="col-12">
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <div>
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb">
+                            <li class="breadcrumb-item"><a href="{% url 'superadmin:companies_list' %}">Companies</a></li>
+                            <li class="breadcrumb-item active">Edit Company</li>
+                        </ol>
+                    </nav>
                     <h1 class="h3 mb-0">Edit Company</h1>
-                    <p class="text-muted mb-0">{{ company.name }}</p>
+                    <p class="text-muted mb-0">Update details for <strong>{{ company.name }}</strong></p>
                 </div>
                 <div>
                     <a href="{% url 'superadmin:companies_list' %}" class="btn btn-secondary">
-                        <i class="bi bi-arrow-left"></i> Back to Companies
-                    </a>
-                    <a href="{% url 'superadmin:company_detail' company.id %}" class="btn btn-info">
-                        <i class="bi bi-eye"></i> View Details
+                        <i class="bi bi-arrow-left me-2"></i>Back to Companies
                     </a>
                 </div>
             </div>
@@ -26,7 +29,7 @@
                 <div class="col-md-8">
                     <div class="card sa-card">
                         <div class="card-header">
-                            <h5 class="mb-0">Company Information</h5>
+                            <h5 class="card-title mb-0">Company Information</h5>
                         </div>
                         <div class="card-body">
                             {% if messages %}
@@ -38,116 +41,155 @@
                                 {% endfor %}
                             {% endif %}
 
-                            <form method="post">
+                            <form method="post" id="editCompanyForm">
                                 {% csrf_token %}
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label for="name" class="form-label">Company Name <span class="text-danger">*</span></label>
-                                            <input type="text" class="form-control" id="name" name="name" value="{{ company.name }}" required>
-                                        </div>
+
+                                <!-- Basic Information -->
+                                <div class="mb-4">
+                                    <h6 class="text-muted mb-3">Basic Information</h6>
+
+                                    <div class="mb-3">
+                                        <label for="companyName" class="form-label">Company Name <span class="text-danger">*</span></label>
+                                        <input type="text" class="form-control" id="companyName" name="name"
+                                               value="{{ company.name }}" required minlength="2" maxlength="100">
+                                        <div class="invalid-feedback">Company name must be 2–100 characters.</div>
                                     </div>
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label for="email" class="form-label">Email <span class="text-danger">*</span></label>
-                                            <input type="email" class="form-control" id="email" name="email" value="{{ company.email }}" required>
+
+                                    <div class="mb-3">
+                                        <label for="companyEmail" class="form-label">Email Address <span class="text-danger">*</span></label>
+                                        <input type="email" class="form-control" id="companyEmail" name="email"
+                                               value="{{ company.email }}" required maxlength="254">
+                                        <div class="invalid-feedback">Please enter a valid email address.</div>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label for="companyPhone" class="form-label">Phone Number <span class="text-danger">*</span></label>
+                                        <input type="tel" class="form-control" id="companyPhone" name="phone"
+                                               value="{{ company.phone }}" required pattern="[0-9]{10}" maxlength="10"
+                                               placeholder="10-digit phone number">
+                                        <div class="invalid-feedback">Phone number must be exactly 10 digits.</div>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label for="companyAddress" class="form-label">Address</label>
+                                        <textarea class="form-control" id="companyAddress" name="address"
+                                                  rows="3" maxlength="500">{{ company.address }}</textarea>
+                                        <div class="form-text">Max 500 characters.</div>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label for="isActive" class="form-label">Company Status</label>
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" id="isActive" name="is_active"
+                                                   {% if company.is_active %}checked{% endif %}>
+                                            <label class="form-check-label" for="isActive">
+                                                Active (uncheck to deactivate)
+                                            </label>
                                         </div>
                                     </div>
                                 </div>
 
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label for="phone" class="form-label">Phone <span class="text-danger">*</span></label>
-                                            <input type="tel" class="form-control" id="phone" name="phone" value="{{ company.phone }}" required>
-                                        </div>
+                                <!-- Subscription Information -->
+                                <div class="mb-4">
+                                    <h6 class="text-muted mb-3">Subscription Information</h6>
+
+                                    <div class="mb-3">
+                                        <label for="companyPlan" class="form-label">Subscription Plan</label>
+                                        <select class="form-select" id="companyPlan" name="plan">
+                                            <option value="">— No Plan —</option>
+                                            {% for plan in plans %}
+                                                <option value="{{ plan.id }}"
+                                                    {% if company.plan and company.plan.id == plan.id %}selected{% endif %}>
+                                                    {{ plan.name }} — ₹{{ plan.price }}/{{ plan.billing_cycle }}
+                                                </option>
+                                            {% endfor %}
+                                        </select>
+                                        <div class="form-text">Change the subscription plan for this company.</div>
                                     </div>
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label for="plan" class="form-label">Plan <span class="text-danger">*</span></label>
-                                            <select class="form-select" id="plan" name="plan" required>
-                                                <option value="">Select a plan</option>
-                                                {% for plan in plans %}
-                                                    <option value="{{ plan.id }}" {% if company.plan and company.plan.id == plan.id %}selected{% endif %}>
-                                                        {{ plan.name }} - ₹{{ plan.price }}/{{ plan.billing_cycle }}
-                                                    </option>
-                                                {% endfor %}
-                                            </select>
-                                        </div>
+
+                                    <div class="mb-3">
+                                        <label for="subscriptionStatus" class="form-label">Subscription Status <span class="text-danger">*</span></label>
+                                        <select class="form-select" id="subscriptionStatus" name="subscription_status" required>
+                                            <option value="active"    {% if company.subscription_status == 'active'    %}selected{% endif %}>Active</option>
+                                            <option value="trial"     {% if company.subscription_status == 'trial'     %}selected{% endif %}>Trial</option>
+                                            <option value="expired"   {% if company.subscription_status == 'expired'   %}selected{% endif %}>Expired</option>
+                                            <option value="cancelled" {% if company.subscription_status == 'cancelled' %}selected{% endif %}>Cancelled</option>
+                                        </select>
+                                        <div class="form-text">Current subscription status.</div>
                                     </div>
                                 </div>
 
-                                <div class="mb-3">
-                                    <label for="address" class="form-label">Address <span class="text-danger">*</span></label>
-                                    <textarea class="form-control" id="address" name="address" rows="3" required>{{ company.address }}</textarea>
-                                </div>
-
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label for="subscription_status" class="form-label">Subscription Status <span class="text-danger">*</span></label>
-                                            <select class="form-select" id="subscription_status" name="subscription_status" required>
-                                                <option value="">Select status</option>
-                                                <option value="trial" {% if company.subscription_status == 'trial' %}selected{% endif %}>Trial</option>
-                                                <option value="active" {% if company.subscription_status == 'active' %}selected{% endif %}>Active</option>
-                                                <option value="expired" {% if company.subscription_status == 'expired' %}selected{% endif %}>Expired</option>
-                                                <option value="cancelled" {% if company.subscription_status == 'cancelled' %}selected{% endif %}>Cancelled</option>
-                                            </select>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <div class="form-check mt-4">
-                                                <input class="form-check-input" type="checkbox" id="is_active" name="is_active" {% if company.is_active %}checked{% endif %}>
-                                                <label class="form-check-label" for="is_active">
-                                                    Active Company
-                                                </label>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="d-flex justify-content-end gap-2">
-                                    <a href="{% url 'superadmin:companies_list' %}" class="btn btn-secondary">
-                                        Cancel
-                                    </a>
-                                    <button type="submit" class="btn btn-primary">
-                                        <i class="bi bi-check-circle"></i> Update Company
+                                <!-- Form Actions -->
+                                <div class="d-flex gap-2">
+                                    <button type="submit" class="btn btn-primary" id="submitBtn">
+                                        <i class="bi bi-check-circle me-2"></i>Save Changes
                                     </button>
+                                    <a href="{% url 'superadmin:companies_list' %}" class="btn btn-secondary">
+                                        <i class="bi bi-x-circle me-2"></i>Cancel
+                                    </a>
                                 </div>
                             </form>
                         </div>
                     </div>
                 </div>
 
+                <!-- Sidebar info -->
                 <div class="col-md-4">
                     <div class="card sa-card">
                         <div class="card-header">
-                            <h5 class="mb-0">Company Statistics</h5>
+                            <h5 class="card-title mb-0">Company Details</h5>
                         </div>
                         <div class="card-body">
-                            <div class="mb-3">
-                                <label class="form-label">Total Users</label>
-                                <p class="form-control-plaintext">{{ users.count }} users</p>
+                            <div class="mb-3 d-flex justify-content-between">
+                                <span class="text-muted">Created:</span>
+                                <span>{{ company.created_at|date:"M d, Y" }}</span>
                             </div>
-                            <div class="mb-3">
-                                <label class="form-label">Total Subscriptions</label>
-                                <p class="form-control-plaintext">{{ subscriptions.count }} subscriptions</p>
+                            <div class="mb-3 d-flex justify-content-between">
+                                <span class="text-muted">Current Plan:</span>
+                                {% if company.plan %}
+                                    <span class="badge bg-info">{{ company.plan.name }}</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">No Plan</span>
+                                {% endif %}
                             </div>
-                            <div class="mb-3">
-                                <label class="form-label">Company Status</label>
-                                <p class="form-control-plaintext">
-                                    {% if company.is_active %}
-                                        <span class="badge bg-success">Active</span>
-                                    {% else %}
-                                        <span class="badge bg-danger">Inactive</span>
-                                    {% endif %}
-                                </p>
+                            <div class="mb-3 d-flex justify-content-between">
+                                <span class="text-muted">Status:</span>
+                                {% if company.subscription_status == 'active' %}
+                                    <span class="badge bg-success">Active</span>
+                                {% elif company.subscription_status == 'trial' %}
+                                    <span class="badge bg-primary">Trial</span>
+                                {% elif company.subscription_status == 'expired' %}
+                                    <span class="badge bg-danger">Expired</span>
+                                {% elif company.subscription_status == 'cancelled' %}
+                                    <span class="badge bg-warning">Cancelled</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">{{ company.subscription_status|title }}</span>
+                                {% endif %}
                             </div>
-                            <div class="mb-3">
-                                <label class="form-label">Created Date</label>
-                                <p class="form-control-plaintext">{{ company.created_at|date:"M d, Y H:i" }}</p>
+                            <div class="mb-3 d-flex justify-content-between">
+                                <span class="text-muted">Users:</span>
+                                <span>{{ company.users.count }}</span>
                             </div>
+                        </div>
+                    </div>
+
+                    <div class="card sa-card mt-3">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">Edit Guidelines</h5>
+                        </div>
+                        <div class="card-body">
+                            <p class="small text-muted mb-2">
+                                <strong class="text-primary">Plan Change:</strong>
+                                Changing the plan here updates the company's assigned plan immediately.
+                            </p>
+                            <p class="small text-muted mb-2">
+                                <strong class="text-primary">Status Change:</strong>
+                                Changing subscription status affects what features the company can access.
+                            </p>
+                            <p class="small text-muted mb-0">
+                                <strong class="text-primary">Deactivating:</strong>
+                                Unchecking "Active" prevents the company from logging in.
+                            </p>
                         </div>
                     </div>
                 </div>
@@ -155,4 +197,50 @@
         </div>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('editCompanyForm');
+    const submitBtn = document.getElementById('submitBtn');
+
+    // Real-time phone validation
+    document.getElementById('companyPhone').addEventListener('input', function() {
+        const ok = /^[0-9]{10}$/.test(this.value.trim());
+        this.classList.toggle('is-invalid', !ok);
+        this.classList.toggle('is-valid', ok);
+    });
+
+    // Real-time name validation
+    document.getElementById('companyName').addEventListener('input', function() {
+        const ok = this.value.trim().length >= 2;
+        this.classList.toggle('is-invalid', !ok);
+        this.classList.toggle('is-valid', ok);
+    });
+
+    form.addEventListener('submit', function(e) {
+        const phone = document.getElementById('companyPhone').value.trim();
+        const name  = document.getElementById('companyName').value.trim();
+
+        let valid = true;
+
+        if (name.length < 2) {
+            document.getElementById('companyName').classList.add('is-invalid');
+            valid = false;
+        }
+
+        if (!/^[0-9]{10}$/.test(phone)) {
+            document.getElementById('companyPhone').classList.add('is-invalid');
+            valid = false;
+        }
+
+        if (!valid) {
+            e.preventDefault();
+            return;
+        }
+
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Saving...';
+    });
+});
+</script>
 {% endblock %}

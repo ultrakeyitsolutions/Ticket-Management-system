@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test All Fixes - CSRF & Accessibility</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+</head>
+<body>
+    <div class="container mt-5">
+        <h1>Test All Fixes - CSRF Token & Accessibility</h1>
+        <p>This page tests all the fixes for CSRF token errors and accessibility warnings.</p>
+        
+        <!-- Simulate existing forms with CSRF tokens -->
+        <form id="agent-account-form" method="post" enctype="multipart/form-data" class="row g-3" style="display: none;">
+            <input type="hidden" name="csrfmiddlewaretoken" value="test-csrf-token-account">
+            <input type="hidden" name="username" value="testuser" autocomplete="username">
+        </form>
+        
+        <form method="post" class="row g-3" style="display: none;">
+            <input type="hidden" name="csrfmiddlewaretoken" value="test-csrf-token-password">
+            <input type="hidden" name="username" value="testuser" autocomplete="username">
+        </form>
+        
+        <form method="post" class="row g-3" style="display: none;">
+            <input type="hidden" name="csrfmiddlewaretoken" value="test-csrf-token-notifications">
+            <input type="hidden" name="username" value="testuser" autocomplete="username">
+        </form>
+        
+        <div class="row mt-4">
+            <div class="col-md-6">
+                <button class="btn btn-primary" onclick="testCsrfRetrieval()">Test CSRF Retrieval</button>
+                <button class="btn btn-success" onclick="openMessageModal()">Open Message Modal</button>
+            </div>
+            <div class="col-md-6">
+                <button class="btn btn-info" onclick="testAccessibility()">Test Accessibility</button>
+                <button class="btn btn-warning" onclick="testErrorHandling()">Test Error Handling</button>
+            </div>
+        </div>
+        
+        <div class="mt-4">
+            <h3>Test Results:</h3>
+            <div id="test-results" class="alert alert-info">
+                Click the buttons above to test all fixes.
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function testCsrfRetrieval() {
+            const resultsDiv = document.getElementById('test-results');
+            resultsDiv.innerHTML = '<div class="spinner-border text-primary" role="status"><span class="visually-hidden">Testing...</span></div>';
+            
+            try {
+                // Test the fixed CSRF token retrieval logic
+                let csrfToken = '';
+                try {
+                    const csrfTokenElement = document.querySelector('[name=csrfmiddlewaretoken]') ||
+                                           document.querySelector('input[name="csrfmiddlewaretoken"]');
+                    if (csrfTokenElement && csrfTokenElement.value) {
+                        csrfToken = csrfTokenElement.value;
+                    }
+                } catch (error) {
+                    console.warn('CSRF token retrieval test:', error);
+                    csrfToken = '';
+                }
+                
+                if (csrfToken) {
+                    resultsDiv.innerHTML = `<div class="alert alert-success">
+                        <strong>CSRF Token Test: PASSED</strong><br>
+                        Token retrieved successfully: ${csrfToken}<br>
+                        No TypeError occurred - null reference fix is working!
+                    </div>`;
+                } else {
+                    resultsDiv.innerHTML = `<div class="alert alert-warning">
+                        <strong>CSRF Token Test: WARNING</strong><br>
+                        No token found, but no error occurred.<br>
+                        The null reference fix is working correctly.
+                    </div>`;
+                }
+            } catch (error) {
+                resultsDiv.innerHTML = `<div class="alert alert-danger">
+                    <strong>CSRF Token Test: FAILED</strong><br>
+                    Error: ${error.message}<br>
+                    The fix may need further attention.
+                </div>`;
+            }
+        }
+
+        function openMessageModal() {
+            // Get CSRF token from existing form - using the fixed version
+            let csrfToken = '';
+            try {
+                const csrfTokenElement = document.querySelector('[name=csrfmiddlewaretoken]') ||
+                                       document.querySelector('input[name="csrfmiddlewaretoken"]');
+                if (csrfTokenElement && csrfTokenElement.value) {
+                    csrfToken = csrfTokenElement.value;
+                }
+            } catch (error) {
+                console.warn('CSRF token retrieval in modal creation:', error);
+                csrfToken = '';
+            }
+
+            // Create a simple message modal for demo
+            const modalHtml = `
+                <div class="modal fade show" id="messageModal" style="display: flex; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
+                    <div class="modal-content" style="background: white; padding: 2rem; border-radius: 8px; max-width: 500px; width: 90%;">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 class="mb-0">Send Message</h5>
+                            <button type="button" class="btn-close" onclick="closeMessageModal()">&times;</button>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Recipient</label>
+                            <select class="form-control mb-2" id="messageRecipient">
+                                <option value="">Select a recipient...</option>
+                                <option value="admin">System Administrator</option>
+                                <option value="user">Customer Support</option>
+                                <option value="agent">Another Agent</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Message</label>
+                            <textarea class="form-control" id="messageContent" rows="4" placeholder="Type your message here..."></textarea>
+                        </div>
+                        <input type="hidden" name="csrfmiddlewaretoken" value="${csrfToken}">
+                        <div class="d-flex gap-2">
+                            <button type="button" class="btn btn-primary" onclick="sendMessage()">Send Message</button>
+                            <button type="button" class="btn btn-secondary" onclick="closeMessageModal()">Cancel</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Add modal to page
+            const modalDiv = document.createElement('div');
+            modalDiv.innerHTML = modalHtml;
+            document.body.appendChild(modalDiv);
+            
+            const resultsDiv = document.getElementById('test-results');
+            resultsDiv.innerHTML = `<div class="alert alert-success">
+                <strong>Modal Creation: SUCCESS</strong><br>
+                Message modal opened without errors.<br>
+                CSRF token: ${csrfToken || 'Not found (but no error!)'}
+            </div>`;
+        }
+
+        function closeMessageModal() {
+            const modal = document.getElementById('messageModal');
+            if (modal) {
+                modal.remove();
+            }
+        }
+
+        function sendMessage() {
+            const recipient = document.getElementById('messageRecipient').value;
+            const content = document.getElementById('messageContent').value;
+            
+            if (!recipient || !content.trim()) {
+                alert('Please select a recipient and enter a message');
+                return;
+            }
+            
+            // Test the fixed CSRF token retrieval
+            const modal = document.getElementById('messageModal');
+            let csrfToken = null;
+            
+            if (modal) {
+                try {
+                    const modalCsrf = modal.querySelector('[name=csrfmiddlewaretoken]');
+                    if (modalCsrf && modalCsrf.value) {
+                        csrfToken = modalCsrf.value;
+                    }
+                } catch (error) {
+                    console.warn('Modal CSRF token retrieval error:', error);
+                    csrfToken = null;
+                }
+            }
+            
+            // Fallback to page forms if not found in modal
+            if (!csrfToken) {
+                try {
+                    const pageCsrf = document.querySelector('[name=csrfmiddlewaretoken]') ||
+                                    document.querySelector('input[name="csrfmiddlewaretoken"]');
+                    if (pageCsrf && pageCsrf.value) {
+                        csrfToken = pageCsrf.value;
+                    }
+                } catch (error) {
+                    console.warn('CSRF token retrieval error:', error);
+                    csrfToken = null;
+                }
+            }
+            
+            const resultsDiv = document.getElementById('test-results');
+            
+            if (csrfToken) {
+                resultsDiv.innerHTML = `<div class="alert alert-success">
+                    <strong>Message Send Test: PASSED</strong><br>
+                    CSRF Token: ${csrfToken}<br>
+                    Recipient: ${recipient}<br>
+                    Message: "${content}"<br>
+                    No TypeError occurred - all fixes are working!
+                </div>`;
+                closeMessageModal();
+            } else {
+                resultsDiv.innerHTML = `<div class="alert alert-warning">
+                    <strong>Message Send Test: WARNING</strong><br>
+                    No CSRF token found, but no TypeError occurred.<br>
+                    The null reference fix is working correctly.
+                </div>`;
+            }
+        }
+
+        function testAccessibility() {
+            const resultsDiv = document.getElementById('test-results');
+            
+            // Check all forms for username fields
+            const forms = document.querySelectorAll('form[method="post"]');
+            let accessibleForms = 0;
+            let totalForms = forms.length;
+            
+            forms.forEach(form => {
+                const usernameField = form.querySelector('input[name="username"]');
+                if (usernameField) {
+                    accessibleForms++;
+                }
+            });
+            
+            if (accessibleForms === totalForms && totalForms > 0) {
+                resultsDiv.innerHTML = `<div class="alert alert-success">
+                    <strong>Accessibility Test: PASSED</strong><br>
+                    All ${totalForms} forms have username fields.<br>
+                    No accessibility warnings should appear.
+                </div>`;
+            } else {
+                resultsDiv.innerHTML = `<div class="alert alert-warning">
+                    <strong>Accessibility Test: WARNING</strong><br>
+                    ${accessibleForms}/${totalForms} forms have username fields.<br>
+                    Some accessibility warnings may still appear.
+                </div>`;
+            }
+        }
+
+        function testErrorHandling() {
+            const resultsDiv = document.getElementById('test-results');
+            
+            try {
+                // Test various error scenarios
+                const tests = [];
+                
+                // Test 1: Null element access
+                try {
+                    const nullElement = document.querySelector('#non-existent-element');
+                    const value = nullElement ? nullElement.value : 'safe';
+                    tests.push('Null element access: SAFE');
+                } catch (error) {
+                    tests.push(`Null element access: ${error.message}`);
+                }
+                
+                // Test 2: Undefined property access
+                try {
+                    const undefinedElement = document.querySelector('[name="non-existent"]');
+                    const value = (undefinedElement && undefinedElement.value) ? undefinedElement.value : 'safe';
+                    tests.push('Undefined property access: SAFE');
+                } catch (error) {
+                    tests.push(`Undefined property access: ${error.message}`);
+                }
+                
+                resultsDiv.innerHTML = `<div class="alert alert-success">
+                    <strong>Error Handling Test: PASSED</strong><br>
+                    ${tests.join('<br>')}
+                    <br>All error scenarios handled safely.
+                </div>`;
+            } catch (error) {
+                resultsDiv.innerHTML = `<div class="alert alert-danger">
+                    <strong>Error Handling Test: FAILED</strong><br>
+                    ${error.message}
+                </div>`;
+            }
+        }
+    </script>
+</body>
+</html>

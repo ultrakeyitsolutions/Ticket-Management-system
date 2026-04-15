@@ -38,6 +38,11 @@
             {{ password_error }}
           </div>
         {% endif %}
+        {% if profile_error %}
+          <div class="alert alert-danger" role="alert">
+            {{ profile_error }}
+          </div>
+        {% endif %}
 
         <div class="card mb-4">
           <div class="card-body">
@@ -91,11 +96,11 @@
                     </div>
                     <div class="col-md-6">
                       <label class="form-label">Username</label>
-                      <input type="text" class="form-control" value="{{ request.user.username }}" disabled>
+                      <input type="text" name="username" class="form-control" value="{{ request.user.username }}" autocomplete="username">
                     </div>
                     <div class="col-md-6">
                       <label class="form-label">Email</label>
-                      <input type="email" name="email" class="form-control" value="{{ request.user.email }}">
+                      <input type="email" name="email" class="form-control" value="{{ request.user.email }}" autocomplete="email">
                     </div>
                     <div class="col-md-6">
                       <label class="form-label">Role</label>
@@ -138,6 +143,7 @@
             <form method="post" action="{% url 'dashboards:admin_dashboard_page' 'profile.html' %}">
               {% csrf_token %}
               <input type="hidden" name="action" value="password">
+              <input type="text" name="username" value="{{ request.user.username }}" autocomplete="username" style="display: none;">
               <div class="row g-3">
                 <div class="col-md-4">
                   <label class="form-label">Current Password</label>
@@ -217,7 +223,41 @@
       }
     }
     
+    // Profile form validation
+    function validateProfileForm(form) {
+      const username = form.querySelector('input[name="username"]').value.trim();
+      const currentUsername = '{{ request.user.username }}';
+      
+      if (username && username !== currentUsername) {
+        // Basic validation
+        if (username.length < 3) {
+          alert('Username must be at least 3 characters long.');
+          return false;
+        }
+        
+        // Check for invalid characters
+        if (!/^[a-zA-Z0-9_@.+]+$/.test(username)) {
+          alert('Username can only contain letters, numbers, and @/./+/_ characters.');
+          return false;
+        }
+      }
+      
+      return true;
+    }
+    
+    // Add validation to profile forms
     document.addEventListener('DOMContentLoaded', function(){
+      // Add form validation
+      const profileForms = document.querySelectorAll('form[action*="profile.html"]');
+      profileForms.forEach(form => {
+        form.addEventListener('submit', function(e) {
+          if (!validateProfileForm(this)) {
+            e.preventDefault();
+            return false;
+          }
+        });
+      });
+      
       loadComponent('{% url "dashboards:admin_dashboard_page" "partials/header.html" %}', 'header-container')
         .then(function(){
           if (window.initializeHeader) {

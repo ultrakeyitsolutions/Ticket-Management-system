@@ -112,7 +112,7 @@
                             </div>
                             <h4 class="text-muted">No Companies Found</h4>
                             <p class="text-muted">There are no companies registered in the system yet.</p>
-                            <button class="btn btn-primary" data-bs-toggle="offcanvas" data-bs-target="#addCompanyOffcanvas" aria-controls="addCompanyOffcanvas">
+                            <button class="btn btn-primary" onclick="showAddCompany()">
                                 <i class="bi bi-plus-circle"></i> Add First Company
                             </button>
                         </div>
@@ -128,7 +128,6 @@
         <div class="col-12">
             <nav aria-label="Companies pagination">
                 <ul class="pagination justify-content-center">
-                    <!-- Previous Button -->
                     {% if companies.has_previous %}
                         <li class="page-item">
                             <a class="page-link" href="?page={{ companies.previous_page_number }}" aria-label="Previous">
@@ -137,26 +136,18 @@
                         </li>
                     {% else %}
                         <li class="page-item disabled">
-                            <span class="page-link" aria-label="Previous">
-                                <span aria-hidden="true">&laquo; Previous</span>
-                            </span>
+                            <span class="page-link"><span aria-hidden="true">&laquo; Previous</span></span>
                         </li>
                     {% endif %}
                     
-                    <!-- Page Numbers -->
                     {% for num in companies.paginator.page_range %}
                         {% if companies.number == num %}
-                            <li class="page-item active">
-                                <span class="page-link">{{ num }}</span>
-                            </li>
+                            <li class="page-item active"><span class="page-link">{{ num }}</span></li>
                         {% elif num > companies.number|add:'-3' and num < companies.number|add:'3' %}
-                            <li class="page-item">
-                                <a class="page-link" href="?page={{ num }}">{{ num }}</a>
-                            </li>
+                            <li class="page-item"><a class="page-link" href="?page={{ num }}">{{ num }}</a></li>
                         {% endif %}
                     {% endfor %}
                     
-                    <!-- Next Button -->
                     {% if companies.has_next %}
                         <li class="page-item">
                             <a class="page-link" href="?page={{ companies.next_page_number }}" aria-label="Next">
@@ -165,15 +156,11 @@
                         </li>
                     {% else %}
                         <li class="page-item disabled">
-                            <span class="page-link" aria-label="Next">
-                                <span aria-hidden="true">Next &raquo;</span>
-                            </span>
+                            <span class="page-link"><span aria-hidden="true">Next &raquo;</span></span>
                         </li>
                     {% endif %}
                 </ul>
             </nav>
-            
-            <!-- Page Info -->
             <div class="text-center mt-3">
                 <span class="text-muted">
                     Showing {{ companies.start_index }}-{{ companies.end_index }} of {{ companies.paginator.count }} companies
@@ -202,13 +189,11 @@
         <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
     </div>
     <div class="offcanvas-body">
-        <!-- Alert Container -->
         <div id="alertContainer"></div>
         
         <form id="addCompanyForm">
             {% csrf_token %}
             
-            <!-- Company Information -->
             <div class="mb-4">
                 <h6 class="text-muted mb-3">Company Information</h6>
                 
@@ -216,44 +201,43 @@
                     <label for="companyName" class="form-label">Company Name <span class="text-danger">*</span></label>
                     <input type="text" class="form-control" id="companyName" name="name" required
                            minlength="2" maxlength="100" placeholder="Enter company name">
-                    <div class="invalid-feedback">
-                        Company name must be 2-100 characters long and contain only letters, numbers, spaces, and basic punctuation.
-                    </div>
-                    <div class="form-text">Enter the official company name</div>
+                    <div class="invalid-feedback">Company name must be 2-100 characters.</div>
                 </div>
                 
                 <div class="mb-3">
                     <label for="companyEmail" class="form-label">Email Address <span class="text-danger">*</span></label>
                     <input type="email" class="form-control" id="companyEmail" name="email" required
                            maxlength="254" placeholder="company@example.com">
-                    <div class="invalid-feedback">
-                        Please enter a valid email address (e.g., company@example.com)
-                    </div>
-                    <div class="form-text">Primary contact email</div>
+                    <div class="invalid-feedback">Please enter a valid email address.</div>
                 </div>
                 
                 <div class="mb-3">
                     <label for="companyPhone" class="form-label">Phone Number <span class="text-danger">*</span></label>
                     <input type="tel" class="form-control" id="companyPhone" name="phone" required
-                           pattern="[+]?[0-9\s\-\(\)]{10,20}" placeholder="+1 (555) 123-4567">
-                    <div class="invalid-feedback">
-                        Phone number must be 10-20 digits and may include country code, spaces, hyphens, and parentheses.
-                    </div>
-                    <div class="form-text">Company contact number</div>
+                           pattern="[0-9]{10}" maxlength="10" placeholder="1234567890">
+                    <div class="invalid-feedback">Phone number must be exactly 10 digits.</div>
                 </div>
                 
                 <div class="mb-3">
                     <label for="companyAddress" class="form-label">Address <span class="text-danger">*</span></label>
                     <textarea class="form-control" id="companyAddress" name="address" rows="3" required
                               maxlength="500" placeholder="123 Business St, City, State, ZIP"></textarea>
-                    <div class="invalid-feedback">
-                        Address must not exceed 500 characters.
+                    <div class="invalid-feedback">Address must not exceed 500 characters.</div>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="companyPassword" class="form-label">Company Password <span class="text-danger">*</span></label>
+                    <div class="input-group">
+                        <input type="password" class="form-control" id="companyPassword" name="password" required
+                               minlength="8" maxlength="50" placeholder="Enter company password" autocomplete="new-password">
+                        <button class="btn btn-outline-secondary" type="button" id="togglePassword">
+                            <i class="bi bi-eye" id="passwordIcon"></i>
+                        </button>
                     </div>
-                    <div class="form-text">Physical business address (max 500 characters)</div>
+                    <div class="invalid-feedback">Password must be 8-50 characters long.</div>
                 </div>
             </div>
             
-            <!-- Subscription Details -->
             <div class="mb-4">
                 <h6 class="text-muted mb-3">Subscription Details</h6>
                 
@@ -261,31 +245,25 @@
                     <label for="companyPlan" class="form-label">Subscription Plan <span class="text-danger">*</span></label>
                     <select class="form-select" id="companyPlan" name="plan" required>
                         <option value="">Select a plan</option>
-                        <option value="basic">Basic</option>
-                        <option value="standard">Standard</option>
-                        <option value="premium">Premium</option>
+                        {% for plan in plans %}
+                            <option value="{{ plan.id }}">{{ plan.name }} - ₹{{ plan.price }}/{{ plan.billing_cycle }}</option>
+                        {% endfor %}
                     </select>
-                    <div class="invalid-feedback">
-                        Please select a subscription plan.
-                    </div>
+                    <div class="invalid-feedback">Please select a subscription plan.</div>
                 </div>
                 
                 <div class="mb-3">
                     <label for="subscriptionStatus" class="form-label">Subscription Status <span class="text-danger">*</span></label>
                     <select class="form-select" id="subscriptionStatus" name="subscription_status" required>
-                        <option value="">Select status</option>
+                        <option value="active" selected>Active</option>
                         <option value="trial">Trial</option>
-                        <option value="active">Active</option>
                         <option value="expired">Expired</option>
                         <option value="cancelled">Cancelled</option>
                     </select>
-                    <div class="invalid-feedback">
-                        Please select a subscription status.
-                    </div>
+                    <div class="invalid-feedback">Please select a subscription status.</div>
                 </div>
             </div>
             
-            <!-- Form Actions -->
             <div class="d-flex gap-2">
                 <button type="submit" class="btn btn-primary" id="submitBtn">
                     <i class="bi bi-check-circle me-2"></i>Create Company
@@ -301,308 +279,96 @@
     </div>
 </div>
 
+<!-- SweetAlert2 JS -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
+
 <script>
-function confirmDelete(companyId, companyName) {
-    if (confirm(`Are you sure you want to delete "${companyName}"? This action cannot be undone.`)) {
-        window.location.href = `/superadmin/companies/${companyId}/delete/`;
-    }
-}
-
-// Real-time validation for all form fields
-document.getElementById('companyName').addEventListener('input', function() {
-    validateCompanyName(this);
-});
-
-document.getElementById('companyEmail').addEventListener('input', function() {
-    validateCompanyEmail(this);
-});
-
-document.getElementById('companyPhone').addEventListener('input', function() {
-    validateCompanyPhone(this);
-});
-
-document.getElementById('companyAddress').addEventListener('input', function() {
-    validateCompanyAddress(this);
-});
-
-document.getElementById('companyPlan').addEventListener('change', function() {
-    validateCompanyPlan(this);
-});
-
-document.getElementById('subscriptionStatus').addEventListener('change', function() {
-    validateSubscriptionStatus(this);
-});
-
-// Validation functions
+// ─── Validation helpers ───────────────────────────────────────────────────────
 function validateCompanyName(input) {
     const value = input.value.trim();
     const pattern = /^[A-Za-z0-9\s&.,'-]+$/;
-    
-    if (value.length < 2) {
-        input.classList.add('is-invalid');
-        input.classList.remove('is-valid');
-        return false;
-    }
-    
-    if (value.length > 100) {
-        input.classList.add('is-invalid');
-        input.classList.remove('is-valid');
-        return false;
-    }
-    
-    if (!pattern.test(value)) {
-        input.classList.add('is-invalid');
-        input.classList.remove('is-valid');
-        return false;
-    }
-    
-    input.classList.remove('is-invalid');
-    input.classList.add('is-valid');
-    return true;
+    const ok = value.length >= 2 && value.length <= 100 && pattern.test(value);
+    input.classList.toggle('is-invalid', !ok);
+    input.classList.toggle('is-valid', ok);
+    return ok;
 }
 
 function validateCompanyEmail(input) {
     const value = input.value.trim();
-    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    
-    if (value.length === 0) {
-        input.classList.add('is-invalid');
-        input.classList.remove('is-valid');
-        return false;
-    }
-    
-    if (value.length > 254) {
-        input.classList.add('is-invalid');
-        input.classList.remove('is-valid');
-        return false;
-    }
-    
-    if (!emailPattern.test(value)) {
-        input.classList.add('is-invalid');
-        input.classList.remove('is-valid');
-        return false;
-    }
-    
-    input.classList.remove('is-invalid');
-    input.classList.add('is-valid');
-    return true;
+    const ok = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value) && value.length <= 254;
+    input.classList.toggle('is-invalid', !ok);
+    input.classList.toggle('is-valid', ok);
+    return ok;
 }
 
 function validateCompanyPhone(input) {
     const value = input.value.trim();
-    const phonePattern = /^[+]?[0-9\s\-\(\)]{10,20}$/;
-    
-    if (value.length === 0) {
-        input.classList.remove('is-invalid', 'is-valid');
-        return true; // Phone is optional
-    }
-    
-    if (!phonePattern.test(value)) {
-        input.classList.add('is-invalid');
-        input.classList.remove('is-valid');
-        return false;
-    }
-    
-    input.classList.remove('is-invalid');
-    input.classList.add('is-valid');
-    return true;
+    const ok = /^[0-9]{10}$/.test(value);
+    input.classList.toggle('is-invalid', !ok);
+    input.classList.toggle('is-valid', ok);
+    return ok;
 }
 
 function validateCompanyAddress(input) {
     const value = input.value.trim();
-    
-    if (value.length > 500) {
-        input.classList.add('is-invalid');
-        input.classList.remove('is-valid');
-        return false;
-    }
-    
-    input.classList.remove('is-invalid');
-    input.classList.add('is-valid');
-    return true;
+    const ok = value.length > 0 && value.length <= 500;
+    input.classList.toggle('is-invalid', !ok);
+    input.classList.toggle('is-valid', ok);
+    return ok;
 }
 
-function validateCompanyPlan(select) {
-    const value = select.value;
-    
-    if (value === '') {
-        select.classList.add('is-invalid');
-        select.classList.remove('is-valid');
-        return false;
-    }
-    
-    select.classList.remove('is-invalid');
-    select.classList.add('is-valid');
-    return true;
+function validateCompanyPassword(input) {
+    const value = input.value;
+    const ok = value.length >= 8 && value.length <= 50;
+    input.classList.toggle('is-invalid', !ok);
+    input.classList.toggle('is-valid', ok);
+    return ok;
 }
 
-function validateSubscriptionStatus(select) {
-    const value = select.value;
-    
-    if (value === '') {
-        select.classList.add('is-invalid');
-        select.classList.remove('is-valid');
-        return false;
-    }
-    
-    select.classList.remove('is-invalid');
-    select.classList.add('is-valid');
-    return true;
+function validateSelect(select) {
+    const ok = select.value !== '';
+    select.classList.toggle('is-invalid', !ok);
+    select.classList.toggle('is-valid', ok);
+    return ok;
 }
 
-// Validate entire form
 function validateForm() {
-    const nameValid = validateCompanyName(document.getElementById('companyName'));
-    const emailValid = validateCompanyEmail(document.getElementById('companyEmail'));
-    const phoneValid = validateCompanyPhone(document.getElementById('companyPhone'));
-    const addressValid = validateCompanyAddress(document.getElementById('companyAddress'));
-    const planValid = validateCompanyPlan(document.getElementById('companyPlan'));
-    const statusValid = validateSubscriptionStatus(document.getElementById('subscriptionStatus'));
-    
-    return nameValid && emailValid && phoneValid && addressValid && planValid && statusValid;
+    return (
+        validateCompanyName(document.getElementById('companyName')) &
+        validateCompanyEmail(document.getElementById('companyEmail')) &
+        validateCompanyPhone(document.getElementById('companyPhone')) &
+        validateCompanyAddress(document.getElementById('companyAddress')) &
+        validateCompanyPassword(document.getElementById('companyPassword')) &
+        validateSelect(document.getElementById('companyPlan')) &
+        validateSelect(document.getElementById('subscriptionStatus'))
+    );
 }
 
-// AJAX Form submission for Add Company
-document.getElementById('addCompanyForm').addEventListener('submit', function(e) {
-    e.preventDefault();
-    
-    // Validate form before submission
-    if (!validateForm()) {
-        showAlert('Please fix validation errors before submitting.', 'danger');
-        return;
-    }
-    
-    const submitBtn = document.getElementById('submitBtn');
-    const originalText = submitBtn.innerHTML;
-    
-    // Show loading state
-    submitBtn.disabled = true;
-    submitBtn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Creating...';
-    
-    // Clear previous alerts
-    clearAlerts();
-    
-    // Get form data
-    const formData = new FormData(this);
-    
-    // Submit via AJAX
-    fetch('/superadmin/companies/create/', {
-        method: 'POST',
-        body: formData,
-        headers: {
-            'X-Requested-With': 'XMLHttpRequest',
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            // Show success message
-            showAlert('Company created successfully!', 'success');
-            
-            // Close offcanvas after a short delay
-            setTimeout(() => {
-                const offcanvas = bootstrap.Offcanvas.getInstance(document.getElementById('addCompanyOffcanvas'));
-                if (offcanvas) {
-                    offcanvas.hide();
-                }
-                
-                // Refresh the company list via AJAX
-                refreshCompanyList();
-                
-                // Reset form
-                document.getElementById('addCompanyForm').reset();
-            }, 1500);
-        } else {
-            // Show error message
-            showAlert(data.message || 'Error creating company. Please try again.', 'danger');
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        showAlert('Network error. Please try again.', 'danger');
-    })
-    .finally(() => {
-        // Reset button state
-        submitBtn.disabled = false;
-        submitBtn.innerHTML = originalText;
-    });
-});
+// ─── Real-time validation (attach once) ──────────────────────────────────────
+document.getElementById('companyName').addEventListener('input', function() { validateCompanyName(this); });
+document.getElementById('companyEmail').addEventListener('input', function() { validateCompanyEmail(this); });
+document.getElementById('companyPhone').addEventListener('input', function() { validateCompanyPhone(this); });
+document.getElementById('companyAddress').addEventListener('input', function() { validateCompanyAddress(this); });
+document.getElementById('companyPassword').addEventListener('input', function() { validateCompanyPassword(this); });
+document.getElementById('companyPlan').addEventListener('change', function() { validateSelect(this); });
+document.getElementById('subscriptionStatus').addEventListener('change', function() { validateSelect(this); });
 
-// Function to show alerts
+// ─── Alert helpers ────────────────────────────────────────────────────────────
 function showAlert(message, type) {
     const alertContainer = document.getElementById('alertContainer');
     const alertDiv = document.createElement('div');
     alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
-    alertDiv.innerHTML = `
-        ${message}
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    `;
-    
+    alertDiv.innerHTML = `${message}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>`;
     alertContainer.appendChild(alertDiv);
-    
-    // Auto dismiss after 5 seconds
-    setTimeout(() => {
-        if (alertDiv) {
-            alertDiv.remove();
-        }
-    }, 5000);
+    setTimeout(() => alertDiv.remove(), 5000);
 }
 
-// Function to clear alerts
 function clearAlerts() {
-    const alertContainer = document.getElementById('alertContainer');
-    alertContainer.innerHTML = '';
+    document.getElementById('alertContainer').innerHTML = '';
 }
 
-// Function to refresh company list via AJAX
-function refreshCompanyList() {
-    const currentPage = new URLSearchParams(window.location.search).get('page') || '1';
-    
-    fetch(`/superadmin/companies/?page=${currentPage}&ajax=1`, {
-        headers: {
-            'X-Requested-With': 'XMLHttpRequest',
-        }
-    })
-    .then(response => response.text())
-    .then(html => {
-        // Parse the HTML and extract the table and pagination
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(html, 'text/html');
-        
-        // Update the table
-        const newTable = doc.querySelector('table');
-        const currentTable = document.querySelector('table');
-        if (newTable && currentTable) {
-            currentTable.innerHTML = newTable.innerHTML;
-        }
-        
-        // Update pagination
-        const newPagination = doc.querySelector('.pagination');
-        const currentPagination = document.querySelector('.pagination');
-        if (newPagination && currentPagination) {
-            currentPagination.innerHTML = newPagination.innerHTML;
-        }
-        
-        // Update page info
-        const newPageInfo = doc.querySelector('.text-muted');
-        const currentPageInfo = document.querySelector('.text-muted');
-        if (newPageInfo && currentPageInfo) {
-            currentPageInfo.textContent = newPageInfo.textContent;
-        }
-        
-        // Show success toast
-        showToast('Company list refreshed successfully!');
-    })
-    .catch(error => {
-        console.error('Error refreshing list:', error);
-        // Fallback: reload the page
-        window.location.reload();
-    });
-}
-
-// Function to show toast notifications
+// ─── Toast helper ─────────────────────────────────────────────────────────────
 function showToast(message, type = 'success') {
-    // Create toast container if it doesn't exist
     let toastContainer = document.getElementById('toastContainer');
     if (!toastContainer) {
         toastContainer = document.createElement('div');
@@ -611,67 +377,99 @@ function showToast(message, type = 'success') {
         toastContainer.style.zIndex = '1050';
         document.body.appendChild(toastContainer);
     }
-    
-    // Create toast element
     const toastId = 'toast-' + Date.now();
-    const toastHtml = `
+    toastContainer.insertAdjacentHTML('beforeend', `
         <div id="${toastId}" class="toast align-items-center text-white bg-${type === 'success' ? 'success' : 'danger'} border-0" role="alert" aria-live="assertive" aria-atomic="true">
             <div class="d-flex">
-                <div class="toast-body">
-                    ${message}
-                </div>
-                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                <div class="toast-body">${message}</div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
             </div>
         </div>
-    `;
-    
-    toastContainer.insertAdjacentHTML('beforeend', toastHtml);
-    
-    // Initialize and show toast
-    const toastElement = document.getElementById(toastId);
-    const toast = new bootstrap.Toast(toastElement, {
-        autohide: true,
-        delay: 3000
-    });
+    `);
+    const toastEl = document.getElementById(toastId);
+    const toast = new bootstrap.Toast(toastEl, { autohide: true, delay: 3000 });
     toast.show();
-    
-    // Remove toast element after it's hidden
-    toastElement.addEventListener('hidden.bs.toast', () => {
-        toastElement.remove();
-    });
+    toastEl.addEventListener('hidden.bs.toast', () => toastEl.remove());
 }
 
-// Form validation on input
-document.getElementById('companyName').addEventListener('input', function() {
-    if (this.value.trim() === '') {
-        this.classList.add('is-invalid');
-    } else {
-        this.classList.remove('is-invalid');
+// ─── Double submission protection ──────────────────────────────────────────────
+let isSubmitting = false;
+
+// ─── AJAX form submission (single handler) ────────────────────────────────────
+document.getElementById('addCompanyForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+
+    // Prevent double submission
+    if (isSubmitting) {
+        console.log('Form already submitting...');
+        return;
     }
+
+    if (!validateForm()) {
+        return;
+    }
+
+    isSubmitting = true;
+    const submitBtn = document.getElementById('submitBtn');
+    const originalText = submitBtn.innerHTML;
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Creating...';
+    clearAlerts();
+
+    fetch('/superadmin/companies/create/', {
+        method: 'POST',
+        body: new FormData(this),
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .then(r => r.json())
+    .then(data => {
+        isSubmitting = false;  // Reset flag on success
+        if (data.success) {
+            showAlert(data.message, 'success');
+            showToast('Company created successfully!');
+            setTimeout(() => {
+                const offcanvas = bootstrap.Offcanvas.getInstance(document.getElementById('addCompanyOffcanvas'));
+                if (offcanvas) offcanvas.hide();
+                location.reload();
+            }, 1200);
+        } else {
+            showAlert(data.message || 'Error creating company. Please try again.', 'danger');
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalText;
+        }
+    })
+    .catch(() => {
+        isSubmitting = false;  // Reset flag on network error
+        showAlert('Network error. Please try again.', 'danger');
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalText;
+    });
 });
 
-document.getElementById('companyEmail').addEventListener('input', function() {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(this.value)) {
-        this.classList.add('is-invalid');
-    } else {
-        this.classList.remove('is-invalid');
-    }
-});
-
-// Handle offcanvas close event to reset form
-document.getElementById('addCompanyOffcanvas').addEventListener('hidden.bs.offcanvas', function () {
+// ─── Offcanvas close: reset form ─────────────────────────────────────────────
+document.getElementById('addCompanyOffcanvas').addEventListener('hidden.bs.offcanvas', function() {
     document.getElementById('addCompanyForm').reset();
     clearAlerts();
-    // Remove validation classes
-    document.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
+    document.querySelectorAll('#addCompanyForm .is-invalid, #addCompanyForm .is-valid')
+        .forEach(el => { el.classList.remove('is-invalid', 'is-valid'); });
+    isSubmitting = false;  // Reset submission flag
 });
 
-// SweetAlert2 functions
+// ─── Password toggle ──────────────────────────────────────────────────────────
+document.getElementById('togglePassword').addEventListener('click', function() {
+    const input = document.getElementById('companyPassword');
+    const icon  = document.getElementById('passwordIcon');
+    const isPassword = input.type === 'password';
+    input.type = isPassword ? 'text' : 'password';
+    icon.classList.toggle('bi-eye', !isPassword);
+    icon.classList.toggle('bi-eye-slash', isPassword);
+});
+
+// ─── SweetAlert action functions ─────────────────────────────────────────────
 function confirmDelete(companyId, companyName) {
     Swal.fire({
         title: 'Are you sure?',
-        text: `Are you sure you want to delete "${companyName}"? This action cannot be undone.`,
+        text: `Delete "${companyName}"? This action cannot be undone.`,
         icon: 'warning',
         showCancelButton: true,
         confirmButtonColor: '#dc3545',
@@ -679,7 +477,7 @@ function confirmDelete(companyId, companyName) {
         confirmButtonText: 'Yes, delete it!',
         cancelButtonText: 'Cancel',
         reverseButtons: true
-    }).then((result) => {
+    }).then(result => {
         if (result.isConfirmed) {
             window.location.href = `/superadmin/companies/${companyId}/delete/`;
         }
@@ -687,70 +485,16 @@ function confirmDelete(companyId, companyName) {
 }
 
 function viewCompany(companyId) {
-    Swal.fire({
-        title: 'View Company',
-        text: 'Viewing company details...',
-        icon: 'success',
-        timer: 1500,
-        timerProgressBar: true,
-        showConfirmButton: false,
-        position: 'top-end',
-        toast: true,
-        background: '#28a745',
-        color: '#ffffff',
-        iconColor: '#ffffff'
-    });
-    
-    // Redirect after showing toast
-    setTimeout(() => {
-        window.location.href = `/superadmin/companies/${companyId}/detail/`;
-    }, 1000);
+    window.location.href = `/superadmin/companies/${companyId}/detail/`;
 }
 
 function editCompany(companyId) {
-    Swal.fire({
-        title: 'Edit Company',
-        text: 'Opening company editor...',
-        icon: 'success',
-        timer: 1500,
-        timerProgressBar: true,
-        showConfirmButton: false,
-        position: 'top-end',
-        toast: true,
-        background: '#28a745',
-        color: '#ffffff',
-        iconColor: '#ffffff'
-    });
-    
-    // Redirect after showing toast
-    setTimeout(() => {
-        window.location.href = `/superadmin/companies/${companyId}/edit/`;
-    }, 1000);
+    window.location.href = `/superadmin/companies/${companyId}/edit/`;
 }
 
 function showAddCompany() {
-    Swal.fire({
-        title: 'Add Company',
-        text: 'Opening company creation form...',
-        icon: 'success',
-        timer: 1500,
-        timerProgressBar: true,
-        showConfirmButton: false,
-        position: 'top-end',
-        toast: true,
-        background: '#28a745',
-        color: '#ffffff',
-        iconColor: '#ffffff'
-    });
-    
-    // Open offcanvas after showing toast
-    setTimeout(() => {
-        const offcanvas = new bootstrap.Offcanvas(document.getElementById('addCompanyOffcanvas'));
-        offcanvas.show();
-    }, 1000);
+    const offcanvas = new bootstrap.Offcanvas(document.getElementById('addCompanyOffcanvas'));
+    offcanvas.show();
 }
 </script>
-
-<!-- SweetAlert2 JS -->
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
 {% endblock %}

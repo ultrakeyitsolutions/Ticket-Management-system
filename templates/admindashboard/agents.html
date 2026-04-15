@@ -121,17 +121,16 @@
                                                 <input type="text" class="form-control ps-5" id="agent-search" placeholder="Search agents...">
                                             </div>
                                             <div class="d-flex flex-column flex-sm-row gap-2 w-100 w-md-auto">
-                                                <select class="form-select" style="min-width: 150px;">
+                                                <select id="agent-role-filter" class="form-select" style="min-width: 150px;">
                                                     <option value="">All Roles</option>
-                                                    <option>Administrator</option>
-                                                    <option>Agent</option>
-                                                    <option>Manager</option>
+                                                    <option value="Administrator">Administrator</option>
+                                                    <option value="Agent">Agent</option>
+                                                    <option value="Manager">Manager</option>
                                                 </select>
-                                                <select class="form-select" style="min-width: 150px;">
+                                                <select id="agent-status-filter" class="form-select" style="min-width: 150px;">
                                                     <option value="">All Status</option>
-                                                    <option>Active</option>
-                                                    <option>Inactive</option>
-                                                    <option>Away</option>
+                                                    <option value="active">Active</option>
+                                                    <option value="inactive">Inactive</option>
                                                 </select>
                                                 </div>
                                         </div>
@@ -259,8 +258,6 @@
             return cookieValue;
         }
         
-        // Keep all agents in memory for client-side filtering
-        let ALL_AGENTS = [];
         let CURRENT_PAGE = 1;
         let PAGE_SIZE = 5;
         let TOTAL_AGENTS = 0;
@@ -311,17 +308,14 @@
                 return;
             }
 
-            // Paginate list
-            const paginatedList = agents.slice((CURRENT_PAGE - 1) * PAGE_SIZE, CURRENT_PAGE * PAGE_SIZE);
-
-            tbody.innerHTML = paginatedList.map(a => {
+            tbody.innerHTML = agents.map(a => {
                 const statusBadge = a.is_active ? 'bg-success' : 'bg-secondary';
                 const roleBadge = a.role === 'Administrator' || a.role === 'Admin'
                     ? 'bg-primary'
                     : (a.role === 'Manager' ? 'bg-info' : 'bg-secondary');
                 const dept = a.department || '-';
                 const initials = (a.initials || (a.name || '??').slice(0, 2).toUpperCase());
-                const tickets = a.tickets_count ?? 0;
+                const tickets = a.assigned_tickets_count ?? 0;
                 const rating = a.avg_rating ? `${a.avg_rating} <i class="bi bi-star-fill text-warning"></i>` : '<span class="text-muted">—</span>';
                
                 return `
@@ -357,12 +351,7 @@
                               <i class="bi bi-pencil me-2"></i>Edit
                             </button>
                           </li>
-                          <li>
-                            <button class="dropdown-item btn-agent-permissions" data-agent-id="${a.id}">
-                              <i class="bi bi-person-lock me-2"></i>Permissions
-                            </button>
-                          </li>
-                          <li>
+                                                    <li>
                             <button class="dropdown-item btn-agent-set-password" data-agent-id="${a.id}" data-agent-name="${a.name}" data-agent-email="${a.email}">
                               <i class="bi bi-key me-2"></i>Set Password
                             </button>
@@ -437,56 +426,66 @@
                     const pageNum = parseInt(pageLink.getAttribute('data-page'));
                     if (pageNum && pageNum !== CURRENT_PAGE) {
                         CURRENT_PAGE = pageNum;
-                        applyAgentFilters();
+                        loadAgents();
                     }
                 }
             });
         }
 
         function applyAgentFilters(){
-            if (!Array.isArray(ALL_AGENTS) || ALL_AGENTS.length === 0){
-                renderAgents([]);
-                return;
+            // Reset to page 1 when applying filters
+            CURRENT_PAGE = 1;
+            loadAgents();
+        }
+
+        // Fetch agents with pagination
+        async function loadAgents(){
+            const tbody = document.getElementById('agents-tbody');
+            if (tbody) {
+                tbody.innerHTML = '<tr><td colspan="7" class="text-muted">Loading...</td></tr>';
             }
-
-            const searchInput = document.getElementById('agent-search');
-            const selects = document.querySelectorAll('.card-header select.form-select');
-            const roleSelect = selects[0];
-            const statusSelect = selects[1];
-
-            const search = (searchInput?.value || '').toLowerCase().trim();
-            const roleFilter = (roleSelect?.value || '');
-            const statusFilter = (statusSelect?.value || '');
-
-            const filtered = ALL_AGENTS.filter(a => {
-                const name = String(a.name || '').toLowerCase();
-                const email = String(a.email || '').toLowerCase();
-                const dept = String(a.department || '').toLowerCase();
-                const role = String(a.role || '').toLowerCase();
-                const statusText = a.is_active ? 'active' : 'inactive';
-
-                const matchesSearch = !search || (
-                    name.includes(search) ||
-                    email.includes(search) ||
-                    dept.includes(search) ||
-                    role.includes(search)
+            try {
+                const searchInput = document.getElementById('agent-search');
+                const roleFilter = document.getElementById('agent-role-filter');
+                const statusFilter = document.getElementById('agent-status-filter');
+                
+                const search = (searchInput?.value || '').trim();
+                const role = (roleFilter?.value || '').trim();
+                const status = (statusFilter?.value || '').trim();
+                
+                const params = new URLSearchParams({
+                    page: CURRENT_PAGE.toString(),
+                    page_size: PAGE_SIZE.toString(),
+                });
+                
+                if (search) {
+                    params.append('search', search);
+                }
+                
+                if (role) {
+                    params.append('role', role);
+                }
+                
+                if (status) {
+                    params.append('status', status);
+                }
+                
+                const res = await fetch(`/api/agents/?${params.toString()}`);
+                if (!res.ok) throw new Error('Failed to load agents');
+                const payload = await res.json();
+                
+                renderAgents(
+                    payload.results || [], 
+                    payload.total || 0, 
+                    payload.page || 1, 
+                    payload.total_pages || 1
                 );
-
-                const matchesRole = !roleFilter || (a.role === roleFilter);
-                const matchesStatus = !statusFilter || (
-                    (statusFilter === 'Active' && a.is_active) ||
-                    (statusFilter === 'Inactive' && !a.is_active) ||
-                    (statusFilter === 'Away' && a.status === 'Away')
-                );
-
-                return matchesSearch && matchesRole && matchesStatus;
-            });
-
-            // Calculate total pages for filtered results
-            const filteredTotal = filtered.length;
-            const filteredPages = Math.ceil(filteredTotal / PAGE_SIZE);
-            
-            renderAgents(filtered, filteredTotal, CURRENT_PAGE, filteredPages);
+            } catch (e) {
+                console.error(e);
+                if (tbody) {
+                    tbody.innerHTML = '<tr><td colspan="7" class="text-danger">Failed to load agents.</td></tr>';
+                }
+            }
         }
 
         // Wire agent row actions (view/edit/delete/permissions/set password)
@@ -618,6 +617,13 @@
 
                         userIdInput.value = id;
                         userInfoInput.textContent = `${name} (${email})`;
+                        
+                        // Populate username field for accessibility
+                        const usernameInput = document.getElementById('set_password_username');
+                        if (usernameInput) {
+                            usernameInput.value = email || name || 'Unknown';
+                        }
+                        
                         passwordInput.value = '';
                         confirmInput.value = '';
 
@@ -977,19 +983,69 @@
                         setupEditAgentForm();
                         setupSetPasswordForm();
                         
-                        // Setup Add Agent form
+                        // Setup Add Agent form with validation
                         const agentForm = document.getElementById('agentForm');
+                        console.log('Add Agent form found:', !!agentForm);
                         if (agentForm) {
                             const csrftoken = getCookie('csrftoken');
+                            console.log('CSRF token:', csrftoken ? 'found' : 'not found');
+                            
+                            // Add real-time validation
+                            agentForm.addEventListener('input', function(e) {
+                                validateField(e.target);
+                            });
+                            
                             agentForm.addEventListener('submit', async function (e) {
                                 e.preventDefault();
+                                
+                                // Clear previous validation
+                                clearValidation();
+                                
+                                // Validate form
+                                console.log('Validating agent form...');
+                                const validationErrors = validateAgentForm();
+                                console.log('Validation errors:', validationErrors);
+                                
+                                if (validationErrors.length > 0) {
+                                    showValidationErrors(validationErrors);
+                                    return;
+                                }
+                                
+                                // Check if email already exists
+                                const emailValue = document.getElementById('agent_email')?.value?.trim();
+                                if (emailValue) {
+                                    const emailExists = await validateEmailExists(emailValue);
+                                    if (emailExists) {
+                                        showValidationErrors(['Email is already registered']);
+                                        return;
+                                    }
+                                }
 
-                                const firstName = (document.getElementById('agent_first_name')?.value || '').trim();
-                                const lastName = (document.getElementById('agent_last_name')?.value || '').trim();
-                                const email = (document.getElementById('agent_email')?.value || '').trim();
-                                const password = (document.getElementById('agent_password')?.value || '').trim();
-                                const department = document.getElementById('agent_department')?.value || '';
-                                const isActiveVal = document.getElementById('agent_status')?.value || 'true';
+                                // Check if form exists before accessing elements
+                                const firstNameInput = document.getElementById('agent_first_name');
+                                const lastNameInput = document.getElementById('agent_last_name');
+                                const emailInput = document.getElementById('agent_email');
+                                const passwordInput = document.getElementById('agent_password');
+                                const roleInput = document.getElementById('agent_role');
+                                const departmentInput = document.getElementById('agent_department');
+                                const categoryInput = document.getElementById('agent_category');
+                                const statusInput = document.getElementById('agent_status');
+                                 
+                                if (!firstNameInput || !lastNameInput || !emailInput || !passwordInput || !roleInput || !departmentInput || !categoryInput || !statusInput) {
+                                    console.error('Form elements not found');
+                                    alert('Please refresh the page and try again.');
+                                    return;
+                                }
+                                 
+                                // Get form values
+                                const firstName = (firstNameInput?.value || '').trim();
+                                const lastName = (lastNameInput?.value || '').trim();
+                                const email = (emailInput?.value || '').trim();
+                                const password = (passwordInput?.value || '').trim();
+                                const role = (roleInput?.value || '');
+                                const department = (departmentInput?.value || '');
+                                const category = (categoryInput?.value || '');
+                                const isActiveVal = (statusInput?.value || '');
 
                                 // Backend expects a single name field; build it from first/last
                                 const name = (firstName + ' ' + lastName).trim() || firstName || lastName;
@@ -1006,11 +1062,24 @@
                                     name: name,
                                     email: email,
                                     password: password,
-                                    role: 'Agent',
+                                    role: role,
                                     department: department,
+                                    phone: '', // API expects phone field
                                     is_active: (isActiveVal === 'true' || isActiveVal === true),
-                                    initials: initials,
                                 };
+
+                                console.log('Sending payload:', JSON.stringify(payload, null, 2));
+
+                                // Disable submit button to prevent double submission
+                                const submitBtn = document.querySelector('button[form="agentForm"]');
+                                if (!submitBtn) {
+                                    console.error('Submit button not found');
+                                    alert('Please refresh the page and try again.');
+                                    return;
+                                }
+                                const originalText = submitBtn.innerHTML;
+                                submitBtn.disabled = true;
+                                submitBtn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Creating Agent...';
 
                                 try {
                                     const res = await fetch('/api/agents/', {
@@ -1023,12 +1092,11 @@
                                         body: JSON.stringify(payload),
                                     });
 
-                                    if (!res.ok) {
-                                        const text = await res.text();
-                                        throw new Error('Failed to create agent: ' + text);
-                                    }
-
                                     const data = await res.json();
+
+                                    if (!res.ok) {
+                                        throw new Error(data.detail || data.message || data.error || 'Failed to create agent');
+                                    }
                                     
                                     // Show success message with login credentials
                                     const successMessage = `Agent created successfully!\n\nLogin Credentials:\nUsername: ${data.username}\nPassword: [Password you set]\n\nThe agent can now login using these credentials.`;
@@ -1044,10 +1112,169 @@
                                     }
 
                                     agentForm.reset();
+                                    clearValidation();
                                 } catch (err) {
                                     console.error(err);
-                                    alert('Failed to save agent. Please try again or check the console for details.');
+                                    alert('Failed to save agent: ' + (err.message || 'Unknown error'));
+                                } finally {
+                                    // Re-enable submit button
+                                    submitBtn.disabled = false;
+                                    submitBtn.innerHTML = originalText;
                                 }
+                            });
+                        }
+                        
+                        // Validation functions
+                        function validateField(field) {
+                            const value = field.value.trim();
+                            const fieldName = field.name;
+                            let isValid = true;
+                            let errorMessage = '';
+
+                            // Remove previous validation classes
+                            field.classList.remove('is-valid', 'is-invalid');
+
+                            switch (fieldName) {
+                                case 'first_name':
+                                    if (!value) {
+                                        isValid = false;
+                                        errorMessage = 'First name is required';
+                                    } else if (value.length < 2) {
+                                        isValid = false;
+                                        errorMessage = 'First name must be at least 2 characters';
+                                    } else if (!/^[a-zA-Z\s]+$/.test(value)) {
+                                        isValid = false;
+                                        errorMessage = 'First name can only contain letters';
+                                    }
+                                    break;
+                                    
+                                case 'last_name':
+                                    if (value && value.length < 2) {
+                                        isValid = false;
+                                        errorMessage = 'Last name must be at least 2 characters';
+                                    } else if (value && !/^[a-zA-Z\s]+$/.test(value)) {
+                                        isValid = false;
+                                        errorMessage = 'Last name can only contain letters';
+                                    }
+                                    break;
+                                    
+                                case 'email':
+                                    if (!value) {
+                                        isValid = false;
+                                        errorMessage = 'Email is required';
+                                    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+                                        isValid = false;
+                                        errorMessage = 'Please enter a valid email address';
+                                    }
+                                    break;
+                                    
+                                case 'phone':
+                                    if (value && !/^\+?[\d\s\-\(\)]{10,15}$/.test(value.replace(/\s/g, ''))) {
+                                        isValid = false;
+                                        errorMessage = 'Please enter a valid phone number (10-15 digits)';
+                                    }
+                                    break;
+                                    
+                                case 'password':
+                                    if (!value) {
+                                        isValid = false;
+                                        errorMessage = 'Password is required';
+                                    } else if (value.length < 8) {
+                                        isValid = false;
+                                        errorMessage = 'Password must be at least 8 characters';
+                                    } else if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(value)) {
+                                        isValid = false;
+                                        errorMessage = 'Password must contain at least one uppercase letter, one lowercase letter, and one number';
+                                    }
+                                    break;
+                                    
+                                case 'confirm_password':
+                                    const password = document.getElementById('agent_password').value;
+                                    if (!value) {
+                                        isValid = false;
+                                        errorMessage = 'Please confirm your password';
+                                    } else if (value !== password) {
+                                        isValid = false;
+                                        errorMessage = 'Passwords do not match';
+                                    }
+                                    break;
+                                    
+                                case 'role':
+                                case 'department':
+                                case 'is_active':
+                                    if (!value) {
+                                        isValid = false;
+                                        errorMessage = 'This field is required';
+                                    }
+                                    break;
+                            }
+
+                            // Add validation classes
+                            if (isValid) {
+                                field.classList.add('is-valid');
+                            } else {
+                                field.classList.add('is-invalid');
+                                // Update error message
+                                const feedbackElement = field.parentNode.querySelector('.invalid-feedback');
+                                if (feedbackElement) {
+                                    feedbackElement.textContent = errorMessage;
+                                }
+                            }
+
+                            return isValid;
+                        }
+                        
+                        function validateAgentForm() {
+                            const errors = [];
+                            const requiredFields = ['first_name', 'email', 'password', 'confirm_password', 'role', 'department', 'is_active'];
+                            
+                            // Validate each required field
+                            requiredFields.forEach(fieldName => {
+                                const field = document.getElementById(`agent_${fieldName}`);
+                                if (field && !validateField(field)) {
+                                    const label = field.previousElementSibling.textContent.replace(' *', '');
+                                    errors.push(`${label} is required or invalid`);
+                                }
+                            });
+                            
+                            return errors;
+                        }
+                        
+                        async function validateEmailExists(email) {
+                            try {
+                                const response = await fetch(`/api/check-email/?email=${encodeURIComponent(email)}`);
+                                const data = await response.json();
+                                return data.exists;
+                            } catch (error) {
+                                console.error('Error checking email:', error);
+                                return false;
+                            }
+                        }
+                        
+                        function showValidationErrors(errors) {
+                            const summaryDiv = document.getElementById('validationSummary');
+                            const errorsList = document.getElementById('validationErrors');
+                            
+                            if (summaryDiv && errorsList) {
+                                errorsList.innerHTML = errors.map(error => `<li>${error}</li>`).join('');
+                                summaryDiv.style.display = 'block';
+                                
+                                // Scroll to validation summary
+                                summaryDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                            }
+                        }
+                        
+                        function clearValidation() {
+                            // Clear validation summary
+                            const summaryDiv = document.getElementById('validationSummary');
+                            if (summaryDiv) {
+                                summaryDiv.style.display = 'none';
+                            }
+                            
+                            // Clear field validation
+                            const fields = agentForm.querySelectorAll('.form-control');
+                            fields.forEach(field => {
+                                field.classList.remove('is-valid', 'is-invalid');
                             });
                         }
                     });
@@ -1069,9 +1296,8 @@
 
             // Wire up search + filters
             const searchInput = document.getElementById('agent-search');
-            const selects = document.querySelectorAll('.card-header select.form-select');
-            const roleSelect = selects[0];
-            const statusSelect = selects[1];
+            const roleSelect = document.getElementById('agent-role-filter');
+            const statusSelect = document.getElementById('agent-status-filter');
 
             if (searchInput){
                 searchInput.addEventListener('input', applyAgentFilters);
@@ -1101,25 +1327,7 @@
             wireAgentActions();
         });
 
-        // Fetch and store agents, then apply filters
-        async function loadAgents(){
-            const tbody = document.getElementById('agents-tbody');
-            if (tbody){
-                tbody.innerHTML = '<tr><td colspan="7" class="text-muted">Loading...</td></tr>';
-            }
-            try{
-                const res = await fetch('/api/agents/');
-                if(!res.ok) throw new Error('Failed to load agents');
-                const payload = await res.json();
-                const agents = payload.results || [];
-                ALL_AGENTS = agents;
-                applyAgentFilters();
-            }catch(e){
-                console.error(e);
-                if(tbody) tbody.innerHTML = '<tr><td colspan="7" class="text-danger">Failed to load agents.</td></tr>';
-            }
-        }
-    </script>
+            </script>
     
     <!-- Application Scripts -->
      <script src="{% static 'admindashboard/js/dropdown.js' %}"></script>

@@ -4,7 +4,7 @@ from . import views
 
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
-from .views import RegisterView, AgentsListView, CustomersListView, RolesListView, RoleDetailView, ChatMessagesView, UserDetailView, ChatThreadDetailView, UsersListView, SetUserPasswordView, AgentLoginAPIView
+from .views import RegisterView, AgentsListView, CustomersListView, RolesListView, RoleDetailView, ChatMessagesView, UserDetailView, ChatThreadDetailView, UsersListView, SetUserPasswordView, AgentLoginAPIView, admin_forgot_password, admin_reset_password, agent_forgot_password, agent_reset_password, user_forgot_password, user_reset_password
 
 
 
@@ -37,6 +37,14 @@ urlpatterns = [
     path('admin-signup/', views.admin_signup_view, name='admin_signup'),
 
     path('user-signup/', views.user_signup_view, name='user_signup'),
+
+    # Dashboard-specific forgot password URLs
+    path('admin-forgot-password/', admin_forgot_password, name='admin_forgot_password'),
+    path('admin-reset-password/', admin_reset_password, name='admin_reset_password'),
+    path('agent-forgot-password/', agent_forgot_password, name='agent_forgot_password'),
+    path('agent-reset-password/', agent_reset_password, name='agent_reset_password'),
+    path('user-forgot-password/', user_forgot_password, name='user_forgot_password'),
+    path('user-reset-password/', user_reset_password, name='user_reset_password'),
 
 ]
 

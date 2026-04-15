@@ -64,6 +64,9 @@ class UserProfile(models.Model):
     
     # Activity tracking
     last_active = models.DateTimeField(null=True, blank=True)
+    
+    # Company relationship for subscription management
+    company = models.ForeignKey('superadmin.Company', on_delete=models.SET_NULL, null=True, blank=True)
 
     def __str__(self):
         return f"{self.user.username} - {self.role}"

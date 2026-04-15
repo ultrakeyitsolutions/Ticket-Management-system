@@ -75,14 +75,7 @@
                             
                             <div class="form-group">
                                 <label for="category">Category *</label>
-                                <select id="category" name="category" class="form-control" >
-                                    <option value="">Select Category</option>
-                                    <option value="Technical">Technical</option>
-                                    <option value="IT Support">IT Support</option>
-                                    <option value="Others">Others</option>
-                                </select>
-                                
-                                <input type="text" id="category-other" name="category_other" class="form-control" placeholder="Please type your category" style="display:none; margin-top: 10px;">
+                                {{ form.category }}
                                 <div class="text-danger" id="error-category" style="display:none; margin-top:6px; color:#dc3545;"></div>
                             </div>
                         </div>
@@ -116,8 +109,7 @@
     <script>
     document.addEventListener('DOMContentLoaded', function() {
         const form = document.getElementById('ticketForm');
-        const categoryEl = document.getElementById('category');
-        const otherEl = document.getElementById('category-other');
+        const categoryEl = document.getElementById('id_category');
         const titleEl = document.getElementById('ticket-title');
         const titleCounter = document.getElementById('title-counter');
         
@@ -136,14 +128,12 @@
             });
         }
         
-        // Show/hide "Other" category field
+        // Handle category change - clear any errors when category is selected
         categoryEl.addEventListener('change', function() {
-            if (this.value === 'Others') {
-                otherEl.style.display = 'block';
-                otherEl.required = true;
-            } else {
-                otherEl.style.display = 'none';
-                otherEl.required = false;
+            // Clear any category errors
+            const categoryError = document.getElementById('error-category');
+            if (categoryError) {
+                categoryError.style.display = 'none';
             }
         });
         
@@ -155,7 +145,7 @@
             const title = document.getElementById('ticket-title').value.trim();
             const description = document.getElementById('ticket-description').value.trim();
             const priority = document.getElementById('priority').value;
-            const category = document.getElementById('category').value;
+            const category = categoryEl.value;
             
             let isValid = true;
             
@@ -188,12 +178,10 @@
             }
             
             // Validate category
-            if (!category) {
+            const categoryValue = categoryEl.value.trim();
+            
+            if (!categoryValue) {
                 document.getElementById('error-category').textContent = 'Please select a category';
-                document.getElementById('error-category').style.display = 'block';
-                isValid = false;
-            } else if (category === 'Others' && !otherEl.value.trim()) {
-                document.getElementById('error-category').textContent = 'Please type your category';
                 document.getElementById('error-category').style.display = 'block';
                 isValid = false;
             }

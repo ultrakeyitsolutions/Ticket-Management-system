@@ -1,0 +1,799 @@
+{% extends 'userdashboard/index.html' %}
+{% load static %}
+
+{% block content %}
+<section class="page">
+    <!-- Page Header -->
+    <div class="page-header">
+        <h1 class="page-title">
+            <i class="bi bi-gem me-3"></i>
+            Subscription Plans
+        </h1>
+        <p class="page-description">Choose the perfect plan for your business needs</p>
+    </div>
+
+    <!-- Current Plan Info -->
+    {% if current_plan %}
+    <div class="current-plan-section">
+        <div class="current-plan-card">
+            <div class="current-plan-header">
+                <div class="current-plan-ribbon">
+                    <i class="bi bi-star-fill me-2"></i>
+                    YOUR CURRENT PLAN
+                </div>
+                <div class="current-plan-info">
+                    <h3>{{ current_plan.name }}</h3>
+                    <div class="current-plan-details">
+                        <p class="current-plan-price">{{ currency_symbol }}{{ current_plan.price }}/{{ current_plan.billing_cycle }}</p>
+                        <div class="current-plan-features">
+                            <span class="feature-highlight">
+                                <i class="bi bi-ticket-perforated-fill me-1"></i>
+                                {% if current_plan.tickets == 999 or current_plan.tickets > 100 %}
+                                    Unlimited Tickets
+                                {% else %}
+                                    {{ current_plan.tickets }} Tickets
+                                {% endif %}
+                            </span>
+                            <span class="feature-highlight">
+                                <i class="bi bi-hdd-fill me-1"></i>
+                                {{ current_plan.storage }} Storage
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                <div class="current-plan-badge">
+                    <span class="badge-active">
+                        <i class="bi bi-check-circle-fill me-2"></i>
+                        Active
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Plans Grid -->
+    <div class="plans-grid">
+        {% for plan in plans %}
+        <div class="plan-item {% if current_plan and current_plan.id == plan.id %}current{% endif %}">
+            {% if current_plan and current_plan.id == plan.id %}
+            <div class="current-plan-indicator">
+                <i class="bi bi-check-circle-fill me-1"></i>
+                YOUR PLAN
+            </div>
+            {% endif %}
+            {% if forloop.counter == 2 %}
+                {% if not current_plan or current_plan.id != plan.id %}
+                <div class="popular-badge">
+                    <i class="bi bi-star-fill me-1"></i>
+                    Popular
+                </div>
+                {% endif %}
+            {% endif %}
+            
+            <div class="plan-header">
+                <h3 class="plan-name">{{ plan.name }}</h3>
+                <div class="plan-price">
+                    {% if plan.name == 'Free Trial' %}
+                        <span class="price-free">FREE</span>
+                        <span class="price-period">14 days trial</span>
+                    {% else %}
+                        <span class="price-amount">{{ currency_symbol }}{{ plan.price }}</span>
+                        <span class="price-period">per {{ plan.billing_cycle }}</span>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="plan-features">
+                <div class="feature-item">
+                    <i class="bi bi-ticket-perforated-fill feature-icon"></i>
+                    <span class="feature-text">
+                        {% if plan.tickets == 999 or plan.tickets > 100 %}
+                            Unlimited Tickets
+                        {% else %}
+                            {{ plan.tickets }} Tickets
+                        {% endif %}
+                    </span>
+                </div>
+                
+                <div class="feature-item">
+                    <i class="bi bi-hdd-fill feature-icon"></i>
+                    <span class="feature-text">{{ plan.storage }} Storage</span>
+                </div>
+                
+                <div class="feature-item">
+                    <i class="bi bi-headset feature-icon"></i>
+                    <span class="feature-text">
+                        {% if plan.name == 'Free Trial' %}
+                            Community Support
+                        {% elif plan.name == 'Basic' %}
+                            Basic Support
+                        {% elif plan.name == 'Standard' %}
+                            Priority Support
+                        {% elif plan.name == 'Premium' %}
+                            24/7 Support
+                        {% elif plan.name == 'Unlimited' %}
+                            Dedicated Support
+                        {% else %}
+                            Standard Support
+                        {% endif %}
+                    </span>
+                </div>
+                
+                {% if plan.name == 'Standard' or plan.name == 'Premium' or plan.name == 'Unlimited' %}
+                <div class="feature-item">
+                    <i class="bi bi-graph-up feature-icon"></i>
+                    <span class="feature-text">Advanced Analytics</span>
+                </div>
+                {% endif %}
+                
+                {% if plan.name == 'Premium' or plan.name == 'Unlimited' %}
+                <div class="feature-item">
+                    <i class="bi bi-code-slash feature-icon"></i>
+                    <span class="feature-text">API Access</span>
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="plan-action">
+                {% if current_plan and current_plan.id == plan.id %}
+                <button class="btn-plan btn-current" disabled>
+                    <i class="bi bi-check-circle-fill me-2"></i>
+                    Current Plan
+                </button>
+                {% else %}
+                <button class="btn-plan btn-primary" onclick="selectPlan('{{ plan.id }}')">
+                    {% if plan.name == 'Free Trial' %}
+                        <i class="bi bi-play-fill me-2"></i>
+                        Start Free Trial
+                    {% else %}
+                        <i class="bi bi-arrow-right-circle-fill me-2"></i>
+                        Choose Plan
+                    {% endif %}
+                </button>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Help Text -->
+    {% if not current_plan %}
+    <div class="no-plan-section">
+        <div class="no-plan-card">
+            <div class="no-plan-icon">
+                <i class="bi bi-rocket-takeoff"></i>
+            </div>
+            <div class="no-plan-content">
+                <h3>Choose Your Plan</h3>
+                <p>You haven't selected a subscription plan yet. Choose one below to get started with all features!</p>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</section>
+
+<style>
+/* Page Header */
+.page-header {
+    text-align: center;
+    margin-bottom: 1.5rem;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 1.2rem;
+    border-radius: 15px;
+    color: white;
+    box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+}
+
+.page-title {
+    font-size: 1.8rem;
+    font-weight: 700;
+    margin-bottom: 0.3rem;
+    color: white;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.page-description {
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.9);
+    margin-bottom: 0;
+}
+
+/* Current Plan Section */
+.current-plan-section {
+    margin-bottom: 1.5rem;
+}
+
+.current-plan-card {
+    background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+    border-radius: 12px;
+    padding: 1rem;
+    color: white;
+    box-shadow: 0 6px 15px rgba(72, 187, 120, 0.3);
+    position: relative;
+    overflow: hidden;
+}
+
+.current-plan-ribbon {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    background: rgba(255, 255, 255, 0.15);
+    padding: 0.5rem;
+    text-align: center;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 1px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.current-plan-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-top: 2rem;
+}
+
+.current-plan-info {
+    flex: 1;
+}
+
+.current-plan-info h3 {
+    margin: 0 0 0.5rem 0;
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: white;
+}
+
+.current-plan-details {
+    margin-bottom: 0.5rem;
+}
+
+.current-plan-price {
+    margin: 0 0 1rem 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+    opacity: 0.95;
+}
+
+.current-plan-features {
+    display: flex;
+    gap: 0.8rem;
+    flex-wrap: wrap;
+}
+
+.feature-highlight {
+    background: rgba(255, 255, 255, 0.15);
+    padding: 0.3rem 0.6rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    display: inline-flex;
+    align-items: center;
+}
+
+.badge-active {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    padding: 0.3rem 0.8rem;
+    border-radius: 15px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+/* Plans Grid */
+.plans-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.plan-item {
+    background: white;
+    border-radius: 15px;
+    padding: 1.2rem;
+    border: 2px solid #e2e8f0;
+    position: relative;
+    transition: all 0.3s ease;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+}
+
+.plan-item:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
+    border-color: #667eea;
+}
+
+.plan-item.current {
+    background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+    color: white;
+    border-color: #48bb78;
+}
+
+.plan-item.current .feature-text {
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.current-plan-indicator {
+    position: absolute;
+    top: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+    color: white;
+    padding: 0.3rem 0.8rem;
+    border-radius: 15px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    box-shadow: 0 3px 10px rgba(72, 187, 120, 0.4);
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+.popular-badge {
+    position: absolute;
+    top: -10px;
+    right: 15px;
+    background: linear-gradient(135deg, #f6d365 0%, #fda085 100%);
+    color: white;
+    padding: 0.25rem 0.7rem;
+    border-radius: 15px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    box-shadow: 0 3px 8px rgba(246, 211, 101, 0.4);
+}
+
+/* Plan Header */
+.plan-header {
+    text-align: center;
+    margin-bottom: 1.2rem;
+}
+
+.plan-name {
+    font-size: 1.2rem;
+    font-weight: 700;
+    margin-bottom: 0.6rem;
+    color: #2d3748;
+}
+
+.plan-item.current .plan-name {
+    color: white;
+}
+
+.plan-price {
+    margin-bottom: 0.8rem;
+}
+
+.price-amount {
+    font-size: 1.8rem;
+    font-weight: 800;
+    color: #667eea;
+    display: block;
+    margin-bottom: 0.2rem;
+}
+
+.price-free {
+    font-size: 1.8rem;
+    font-weight: 800;
+    color: #48bb78;
+    display: block;
+    margin-bottom: 0.2rem;
+}
+
+.plan-item.current .price-amount,
+.plan-item.current .price-free {
+    color: white;
+}
+
+.price-period {
+    font-size: 0.8rem;
+    color: #718096;
+}
+
+.plan-item.current .price-period {
+    color: rgba(255, 255, 255, 0.8);
+}
+
+/* Plan Features */
+.plan-features {
+    margin-bottom: 1.2rem;
+}
+
+.feature-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 0.6rem;
+    padding: 0.5rem;
+    background: #f8fafc;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+}
+
+.feature-item:hover {
+    background: #e2e8f0;
+    transform: translateX(5px);
+}
+
+.plan-item.current .feature-item {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.plan-item.current .feature-item:hover {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.feature-icon {
+    font-size: 0.9rem;
+    margin-right: 0.7rem;
+    color: #667eea;
+    width: 18px;
+    text-align: center;
+}
+
+.plan-item.current .feature-icon {
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.feature-text {
+    font-size: 0.85rem;
+    color: #4a5568;
+    font-weight: 500;
+}
+
+/* Plan Action */
+.plan-action {
+    text-align: center;
+}
+
+.btn-plan {
+    width: 100%;
+    padding: 0.7rem;
+    border: none;
+    border-radius: 10px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.btn-plan:hover:not(:disabled) {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.btn-primary:hover {
+    background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
+}
+
+.btn-current {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    cursor: not-allowed;
+}
+
+/* No Plan Section */
+.no-plan-section {
+    margin-top: 1.2rem;
+}
+
+.no-plan-card {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 12px;
+    padding: 1.2rem;
+    display: flex;
+    align-items: center;
+    color: white;
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.3);
+}
+
+.no-plan-icon {
+    font-size: 2rem;
+    margin-right: 1rem;
+    opacity: 0.9;
+}
+
+.no-plan-content h3 {
+    margin: 0 0 0.5rem 0;
+    font-size: 1.2rem;
+    font-weight: 600;
+}
+
+.no-plan-content p {
+    margin: 0;
+    font-size: 0.9rem;
+    opacity: 0.9;
+    line-height: 1.4;
+}
+
+/* Help Section */
+.help-section {
+    margin-top: 1.2rem;
+}
+
+.help-card {
+    background: linear-gradient(135deg, #e0e7ff 0%, #cdd9ff 100%);
+    border-radius: 12px;
+    padding: 1rem;
+    display: flex;
+    align-items: center;
+    border-left: 3px solid #667eea;
+}
+
+.help-icon {
+    font-size: 1.1rem;
+    color: #667eea;
+    margin-right: 0.8rem;
+}
+
+.help-text {
+    margin: 0;
+    color: #4a5568;
+    font-size: 0.85rem;
+    line-height: 1.4;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .page-title {
+        font-size: 1.5rem;
+    }
+    
+    .plans-grid {
+        grid-template-columns: 1fr;
+        gap: 0.8rem;
+    }
+    
+    .plan-item {
+        padding: 1rem;
+    }
+    
+    .current-plan-header {
+        flex-direction: column;
+        text-align: center;
+        gap: 0.8rem;
+    }
+    
+    .current-plan-ribbon {
+        font-size: 0.65rem;
+    }
+    
+    .current-plan-features {
+        justify-content: center;
+    }
+    
+    .help-card {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .help-icon {
+        margin-right: 0;
+        margin-bottom: 0.6rem;
+    }
+    
+    .no-plan-card {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .no-plan-icon {
+        margin-right: 0;
+        margin-bottom: 0.8rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .page-header {
+        padding: 1rem;
+    }
+    
+    .price-amount,
+    .price-free {
+        font-size: 1.5rem;
+    }
+}
+
+/* Payment Modal Styles */
+.payment-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+}
+
+.payment-modal-container {
+    background: white;
+    border-radius: 20px;
+    max-width: 500px;
+    width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+.payment-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem;
+    border-bottom: 1px solid #e2e8f0;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 20px 20px 0 0;
+}
+
+.payment-modal-header h3 {
+    margin: 0;
+    font-size: 1.3rem;
+    font-weight: 600;
+}
+
+.payment-modal-header .btn-close {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 1.2rem;
+    cursor: pointer;
+    padding: 0.5rem;
+    border-radius: 50%;
+    transition: background 0.3s ease;
+}
+
+.payment-modal-header .btn-close:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.payment-modal-body {
+    padding: 2rem;
+}
+
+.plan-summary {
+    text-align: center;
+    margin-bottom: 2rem;
+    padding: 1.5rem;
+    background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+    border-radius: 15px;
+    border: 1px solid #e2e8f0;
+}
+
+.plan-summary h4 {
+    margin: 0 0 1rem 0;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #2d3748;
+}
+
+.plan-summary .plan-price {
+    margin-bottom: 0;
+}
+
+.plan-summary .price-amount {
+    font-size: 2rem;
+    font-weight: 800;
+    color: #667eea;
+    display: block;
+    margin-bottom: 0.5rem;
+}
+
+.plan-summary .price-period {
+    font-size: 1rem;
+    color: #718096;
+}
+
+.payment-form .form-group {
+    margin-bottom: 1.5rem;
+}
+
+.payment-form label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+    color: #4a5568;
+    font-size: 0.9rem;
+}
+
+.payment-form .form-control {
+    width: 100%;
+    padding: 0.75rem;
+    border: 2px solid #e2e8f0;
+    border-radius: 10px;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    background: #f8fafc;
+}
+
+.payment-form .form-control:focus {
+    outline: none;
+    border-color: #667eea;
+    background: white;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.payment-form .form-control:read-only {
+    background: #e2e8f0;
+    color: #718096;
+}
+
+.btn-payment {
+    width: 100%;
+    padding: 1rem;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.btn-payment:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+}
+
+.btn-payment:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* Payment Modal Responsive */
+@media (max-width: 768px) {
+    .payment-modal-container {
+        width: 95%;
+        margin: 1rem;
+    }
+    
+    .payment-modal-body {
+        padding: 1.5rem;
+    }
+    
+    .plan-summary {
+        padding: 1rem;
+    }
+    
+    .plan-summary h4 {
+        font-size: 1.3rem;
+    }
+    
+    .plan-summary .price-amount {
+        font-size: 1.5rem;
+    }
+}
+</style>
+
+<!-- Include Admin Payment Modal -->
+{% include 'admin_payment_modal.html' %}
+
+<script>
+function selectPlan(planId) {
+    // Show the admin payment modal
+    const modal = new bootstrap.Modal(document.getElementById('adminPaymentModal'));
+    modal.show();
+}
+</script>
+{% endblock %}

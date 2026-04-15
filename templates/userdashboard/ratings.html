@@ -1,3 +1,4 @@
+
 {% load static %}
 <!DOCTYPE html>
 <html lang="en">
@@ -297,6 +298,39 @@
   <!-- <script src="{% static 'userdashboard/js/layout.js' %}"></script> -->
   <script src="{% static 'userdashboard/js/script.js' %}"></script>
   <script src="{% static 'userdashboard/js/app.js' %}"></script>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const sortSelect = document.getElementById('sortReviews');
+      const filterSelect = document.getElementById('filterRating');
+      
+      if (sortSelect && filterSelect) {
+        function updateRatings() {
+          const sort = sortSelect.value;
+          const filter = filterSelect.value;
+          
+          // Build URL with parameters
+          const url = new URL(window.location);
+          url.searchParams.set('sort', sort);
+          url.searchParams.set('filter', filter);
+          
+          // Reload page with new parameters
+          window.location.href = url.toString();
+        }
+        
+        sortSelect.addEventListener('change', updateRatings);
+        filterSelect.addEventListener('change', updateRatings);
+        
+        // Set current values from URL parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        const currentSort = urlParams.get('sort') || 'recent';
+        const currentFilter = urlParams.get('filter') || 'all';
+        
+        sortSelect.value = currentSort;
+        filterSelect.value = currentFilter;
+      }
+    });
+  </script>
 
 </body>
 

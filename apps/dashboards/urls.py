@@ -6,7 +6,12 @@ app_name = "dashboards"
 urlpatterns = [
     # Admin API
     path('admin-dashboard/api/notifications/', views.admin_notifications_api, name='admin_notifications_api'),
+    path('admin-dashboard/api/notifications/mark-all-read/', views.admin_notifications_mark_all_read_api, name='admin_notifications_mark_all_read_api'),
+    path('admin-dashboard/api/notifications/<uuid:notification_id>/delete/', views.admin_notification_delete_api, name='admin_notification_delete_api'),
+    path('admin-dashboard/api/notifications/clear-all/', views.admin_notifications_clear_all_api, name='admin_notifications_clear_all_api'),
     path('admin-dashboard/api/ticket-volume/', views.admin_ticket_volume_api, name='admin_ticket_volume_api'),
+    path('admin-dashboard/api/ratings-trends/', views.admin_ratings_trends_api, name='admin_ratings_trends_api'),
+    path('admin-dashboard/api/agents-by-department/', views.get_agents_by_department, name='get_agents_by_department'),
     path('admin-dashboard/reports/export/<str:export_format>/', views.admin_reports_export, name='admin_reports_export'),
 
     # Agent API
@@ -17,10 +22,17 @@ urlpatterns = [
 
     # User API
     path('user-dashboard/api/notifications/', views.user_notifications_api, name='user_notifications_api'),
+    path('user-dashboard/api/notifications/<uuid:notification_id>/mark-read/', views.user_notification_mark_read_api, name='user_notification_mark_read_api'),
+    path('user-dashboard/api/notifications/mark-all-read/', views.user_notifications_mark_all_read_api, name='user_notifications_mark_all_read_api'),
+    path('user-dashboard/api/notifications/<uuid:notification_id>/delete/', views.user_notification_delete_api, name='user_notification_delete_api'),
+    path('user-dashboard/api/notifications/clear-all/', views.user_notifications_clear_all_api, name='user_notifications_clear_all_api'),
     path('user-dashboard/faq/search/', views.faq_search_api, name='faq_search_api'),
 
     # Site Settings API
-    path('api/site-settings/', views.SiteSettingsView.as_view(), name='site_settings_api'),
+    path('api/site-settings/', views.SiteSettingsAPIView.as_view(), name='site_settings_api'),
+    
+    # Admin Settings (dedicated view)
+    path('admin-dashboard/settings/', views.admin_settings_view, name='admin_settings'),
 
     # Dashboard home
     path('', views.dashboard_home, name='dashboard_home'),
@@ -47,6 +59,9 @@ urlpatterns = [
     # Agent skills
     path('agent-dashboard/save-skills/', views.save_skills, name='save_skills'),
     path('agent-dashboard/get-skills/', views.get_skills, name='get_skills'),
+    
+    # Agent messaging
+    path('agent-dashboard/send-message/', views.send_message, name='send_message'),
 
     # Agent dashboard pages — ratings page gets its own dedicated view
     path('agent-dashboard/ratings.html', views.agent_ratings_page, name='agent_ratings_page'),

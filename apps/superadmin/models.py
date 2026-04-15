@@ -17,7 +17,7 @@ class Plan(models.Model):
     name = models.CharField(max_length=100)
     price = models.DecimalField(max_digits=10, decimal_places=2)
     billing_cycle = models.CharField(max_length=10, choices=BILLING_CHOICES, default='monthly')
-    users = models.PositiveIntegerField()
+    tickets = models.PositiveIntegerField()
     storage = models.CharField(max_length=50)
     status = models.CharField(max_length=20, choices=[('active', 'Active'), ('inactive', 'Inactive')], default='active')
     created_date = models.DateField(auto_now_add=True)
@@ -33,6 +33,7 @@ class Company(models.Model):
     email = models.EmailField(unique=True)
     phone = models.CharField(max_length=20)
     address = models.TextField(blank=True, null=True)
+    password = models.CharField(max_length=128)  # Will store hashed password
     
     # Plan and subscription fields
     plan = models.ForeignKey(Plan, on_delete=models.SET_NULL, null=True, blank=True)

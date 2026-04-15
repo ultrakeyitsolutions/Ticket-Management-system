@@ -14,51 +14,11 @@
                     <!-- Plan Selection -->
                     <div id="planSelection" class="mb-4">
                         <h6 class="mb-3">Choose Your Plan:</h6>
-                        
-                        <!-- Basic Plan -->
-                        <div class="card mb-2 plan-card" data-plan="basic" data-price="199">
-                            <div class="card-body">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <h6 class="mb-1">Basic Plan</h6>
-                                        <small class="text-muted">Perfect for small teams</small>
-                                    </div>
-                                    <div class="text-end">
-                                        <div class="h5 mb-0">₹199<span class="text-muted small">/month</span></div>
-                                        <button class="btn btn-sm btn-outline-primary select-plan-btn" onclick="selectAdminPlan('basic', 199)">Select</button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Standard Plan -->
-                        <div class="card mb-2 plan-card" data-plan="standard" data-price="399">
-                            <div class="card-body">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <h6 class="mb-1">Standard Plan <span class="badge bg-success ms-1">Popular</span></h6>
-                                        <small class="text-muted">Great for growing businesses</small>
-                                    </div>
-                                    <div class="text-end">
-                                        <div class="h5 mb-0">₹399<span class="text-muted small">/month</span></div>
-                                        <button class="btn btn-sm btn-primary select-plan-btn" onclick="selectAdminPlan('standard', 399)">Select</button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Premium Plan -->
-                        <div class="card mb-2 plan-card" data-plan="premium" data-price="599">
-                            <div class="card-body">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <h6 class="mb-1">Premium Plan</h6>
-                                        <small class="text-muted">Advanced features for large teams</small>
-                                    </div>
-                                    <div class="text-end">
-                                        <div class="h5 mb-0">₹599<span class="text-muted small">/month</span></div>
-                                        <button class="btn btn-sm btn-outline-primary select-plan-btn" onclick="selectAdminPlan('premium', 599)">Select</button>
-                                    </div>
+                        <div id="plansContainer">
+                            <!-- Plans will be loaded dynamically here -->
+                            <div class="text-center">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">Loading plans...</span>
                                 </div>
                             </div>
                         </div>
@@ -204,10 +164,78 @@
 <script>
 let adminSelectedPlan = null;
 let adminSelectedPrice = null;
+let adminSelectedPlanId = null;
+let availablePlans = [];
 
-function selectAdminPlan(planName, price) {
+// Load plans dynamically when modal is shown
+document.addEventListener('DOMContentLoaded', function() {
+    const paymentModal = document.getElementById('adminPaymentModal');
+    if (paymentModal) {
+        paymentModal.addEventListener('show.bs.modal', function() {
+            loadPlans();
+        });
+    }
+});
+
+function loadPlans() {
+    fetch('/subscriptions/plans-list/')
+        .then(response => response.json())
+        .then(data => {
+            if (data.plans) {
+                availablePlans = data.plans;
+                renderPlans(data.plans);
+            } else {
+                console.error('No plans found');
+            }
+        })
+        .catch(error => {
+            console.error('Error loading plans:', error);
+        });
+}
+
+function renderPlans(plans) {
+    const container = document.getElementById('plansContainer');
+    if (!container) return;
+
+    let plansHTML = '';
+    
+    plans.forEach((plan, index) => {
+        const isPopular = index === 1; // Second plan is popular
+        const price = parseFloat(plan.price);
+        
+        plansHTML += `
+            <div class="card mb-2 plan-card" data-plan-id="${plan.id}" data-plan-name="${plan.name}" data-price="${price}">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="mb-1">
+                                ${plan.name}
+                                ${isPopular ? '<span class="badge bg-success ms-1">Popular</span>' : ''}
+                            </h6>
+                            <small class="text-muted">
+                                ${plan.tickets == 999 ? 'Unlimited' : plan.tickets} tickets, ${plan.storage} storage
+                            </small>
+                        </div>
+                        <div class="text-end">
+                            <div class="h5 mb-0">Rs.${plan.price}<span class="text-muted small">/${plan.billing_cycle}</span></div>
+                            <button class="btn btn-sm ${isPopular ? 'btn-primary' : 'btn-outline-primary'} select-plan-btn" 
+                                    onclick="selectAdminPlan('${plan.name}', ${price}, ${plan.id})">
+                                Select
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    container.innerHTML = plansHTML;
+}
+
+function selectAdminPlan(planName, price, planId) {
     adminSelectedPlan = planName;
     adminSelectedPrice = price;
+    adminSelectedPlanId = planId;
 
     // Update UI
     const planNameElement = document.getElementById('selectedPlanName');
@@ -216,7 +244,7 @@ function selectAdminPlan(planName, price) {
     const proceedBtn = document.getElementById('adminProceedPaymentBtn');
     const paymentForm = document.getElementById('paymentForm');
 
-    if (planNameElement) planNameElement.textContent = planName.charAt(0).toUpperCase() + planName.slice(1);
+    if (planNameElement) planNameElement.textContent = planName;
     if (planPriceElement) planPriceElement.textContent = price;
     if (planInfoElement) planInfoElement.classList.remove('d-none');
     if (proceedBtn) proceedBtn.disabled = false;
@@ -225,7 +253,7 @@ function selectAdminPlan(planName, price) {
     // Update hidden fields
     const planField = document.getElementById('adminSelectedPlan');
     const priceField = document.getElementById('adminSelectedPrice');
-    if (planField) planField.value = planName;
+    if (planField) planField.value = planId; // Store plan ID instead of name
     if (priceField) priceField.value = price;
 
     // Update button states - highlight selected plan
@@ -239,7 +267,7 @@ function selectAdminPlan(planName, price) {
     });
 
     // Highlight selected plan
-    const selectedCard = document.querySelector(`.plan-card[data-plan="${planName}"]`);
+    const selectedCard = document.querySelector(`.plan-card[data-plan-id="${planId}"]`);
     if (selectedCard) {
         selectedCard.classList.add('border-primary', 'border-2');
         const selectedBtn = selectedCard.querySelector('.select-plan-btn');
@@ -251,29 +279,126 @@ function selectAdminPlan(planName, price) {
 }
 
 function processAdminPayment() {
-    if (!adminSelectedPlan || !adminSelectedPrice) {
+    if (!adminSelectedPlanId || !adminSelectedPrice) {
         alert('Please select a plan first');
         return;
     }
 
+    // Get form data
+    const form = document.getElementById('adminPaymentForm');
+    const formData = new FormData(form);
+    
+    // Add plan data
+    formData.append('plan_id', adminSelectedPlanId);
+    formData.append('amount', adminSelectedPrice * 100); // Convert to paise for Razorpay
+
+    // Create payment order
+    fetch('/subscriptions/create-payment-order/', {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken')
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.error) {
+            alert(data.error);
+            return;
+        }
+        
+        // Initialize Razorpay
+        const options = {
+            key: data.key_id,
+            amount: data.amount,
+            currency: data.currency,
+            name: data.company_name,
+            description: data.description,
+            order_id: data.order_id,
+            handler: function(response) {
+                // Handle successful payment
+                verifyPayment(response.razorpay_order_id, response.razorpay_payment_id, response.razorpay_signature);
+            },
+            modal: {
+                ondismiss: function() {
+                    console.log('Payment modal dismissed');
+                }
+            },
+            prefill: {
+                name: formData.get('cardholder_name'),
+                email: formData.get('email'),
+                contact: ''
+            },
+            theme: {
+                color: '#3399cc'
+            }
+        };
+        
+        const rzp = new Razorpay(options);
+        rzp.open();
+    })
+    .catch(error => {
+        console.error('Error creating payment order:', error);
+        alert('Error processing payment. Please try again.');
+    });
+}
+
+function verifyPayment(orderId, paymentId, signature) {
     // Show processing modal
     const processingModal = new bootstrap.Modal(document.getElementById('adminPaymentProcessingModal'));
     processingModal.show();
 
-    // Simulate payment processing
-    setTimeout(() => {
+    fetch('/subscriptions/verify-payment/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify({
+            razorpay_order_id: orderId,
+            razorpay_payment_id: paymentId,
+            razorpay_signature: signature,
+            plan_id: adminSelectedPlanId
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
         processingModal.hide();
         
-        // Hide payment modal
-        const paymentModal = bootstrap.Modal.getInstance(document.getElementById('adminPaymentModal'));
-        if (paymentModal) {
-            paymentModal.hide();
-        }
+        if (data.success) {
+            // Hide payment modal
+            const paymentModal = bootstrap.Modal.getInstance(document.getElementById('adminPaymentModal'));
+            if (paymentModal) {
+                paymentModal.hide();
+            }
 
-        // Show success modal
-        const successModal = new bootstrap.Modal(document.getElementById('adminPaymentSuccessModal'));
-        successModal.show();
-    }, 2000);
+            // Show success modal
+            const successModal = new bootstrap.Modal(document.getElementById('adminPaymentSuccessModal'));
+            successModal.show();
+        } else {
+            alert('Payment verification failed. Please contact support.');
+        }
+    })
+    .catch(error => {
+        processingModal.hide();
+        console.error('Error verifying payment:', error);
+        alert('Error verifying payment. Please try again.');
+    });
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
 }
 
 // Format card number input
@@ -306,6 +431,9 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 </script>
+
+<!-- Razorpay Script -->
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 
 <style>
 .plan-card {

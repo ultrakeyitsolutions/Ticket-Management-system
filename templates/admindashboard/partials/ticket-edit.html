@@ -20,3 +20,83 @@
     </div>
   </div>
 </div>
+
+<script>
+// Dynamic agent filtering based on ticket category
+document.addEventListener('DOMContentLoaded', function() {
+    const categorySelect = document.getElementById('ticket_category');
+    const assignedToSelect = document.getElementById('assigned_to');
+    
+    if (categorySelect && assignedToSelect) {
+        // Store all agents for fallback
+        const allAgents = Array.from(assignedToSelect.options).filter(option => option.value !== '');
+        
+        // Department mapping
+        const categoryDepartmentMapping = {
+            'Technical': 'Technical Support',
+            'Billing': 'Billing Support', 
+            'General': 'General Support'
+        };
+        
+        // Function to update agent options from API
+        function updateAgentOptions(department) {
+            const apiUrl = '/dashboard/dashboards/admin-dashboard/api/agents-by-department/';
+            const url = department ? `${apiUrl}?department=${encodeURIComponent(department)}` : apiUrl;
+            
+            fetch(url, {
+                method: 'GET',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Content-Type': 'application/json',
+                },
+                credentials: 'same-origin'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Clear current options except empty option
+                    while (assignedToSelect.options.length > 1) {
+                        assignedToSelect.remove(1);
+                    }
+                    
+                    // Add filtered agents
+                    data.agents.forEach(agent => {
+                        const option = document.createElement('option');
+                        option.value = agent.id;
+                        option.textContent = agent.full_name;
+                        option.setAttribute('data-department', agent.department);
+                        assignedToSelect.add(option);
+                    });
+                } else {
+                    console.error('Failed to load agents:', data.error);
+                    // Fallback to all agents
+                    allAgents.forEach(agent => {
+                        assignedToSelect.add(agent);
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error loading agents:', error);
+                // Fallback to all agents
+                allAgents.forEach(agent => {
+                    assignedToSelect.add(agent);
+                });
+            });
+        }
+        
+        // Handle category change
+        categorySelect.addEventListener('change', function() {
+            const selectedCategory = this.value;
+            const department = categoryDepartmentMapping[selectedCategory] || null;
+            updateAgentOptions(department);
+        });
+        
+        // Initial filtering based on current category
+        const currentCategory = categorySelect.value;
+        if (currentCategory) {
+            const department = categoryDepartmentMapping[currentCategory] || null;
+            updateAgentOptions(department);
+        }
+    }
+});
+</script>

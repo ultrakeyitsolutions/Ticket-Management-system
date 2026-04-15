@@ -22,7 +22,7 @@
                     <p class="text-muted mb-0">{{ user.get_full_name|default:user.username }}</p>
                 </div>
                 <div>
-                    <a href="{% url 'superadmin:users_list' %}" class="btn btn-secondary">
+                    <a href="{% url 'superadmin:users_list' %}" class="btn btn-secondary" id="backButton">
                         <i class="bi bi-arrow-left me-2"></i>Back to Users
                     </a>
                     <a href="{% url 'superadmin:user_detail' user.id %}" class="btn btn-info">
@@ -50,6 +50,9 @@
 
                             <form method="post">
                                 {% csrf_token %}
+                                {% if from_admin_management %}
+                                <input type="hidden" name="from" value="admin-management">
+                                {% endif %}
                                 
                                 <!-- User Information -->
                                 <div class="mb-4">
@@ -120,9 +123,9 @@
                                 <!-- Form Actions -->
                                 <div class="d-flex gap-2">
                                     <button type="submit" class="btn btn-primary">
-                                        <i class="bi bi-check-circle me-2"></i>Update User
+                                        <i class="bi bi-check-circle me-2"></i>Save Changes
                                     </button>
-                                    <a href="{% url 'superadmin:users_list' %}" class="btn btn-secondary">
+                                    <a href="{% url 'superadmin:users_list' %}" class="btn btn-secondary" id="cancelButton">
                                         <i class="bi bi-x-circle me-2"></i>Cancel
                                     </a>
                                 </div>
@@ -195,4 +198,41 @@
         </div>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Check if user came from admin management page via context variable
+    const fromAdminManagement = '{{ from_admin_management|yesno:"true,false" }}';
+    
+    if (fromAdminManagement === 'true') {
+        // Update back button
+        const backButton = document.getElementById('backButton');
+        if (backButton) {
+            backButton.href = '/superadmin/admin-management/';
+            backButton.innerHTML = '<i class="bi bi-arrow-left me-2"></i>Back to Admin Management';
+        }
+        
+        // Update cancel button
+        const cancelButton = document.getElementById('cancelButton');
+        if (cancelButton) {
+            cancelButton.href = '/superadmin/admin-management/';
+        }
+        
+        // Update breadcrumb
+        const breadcrumbLink = document.querySelector('.breadcrumb a');
+        if (breadcrumbLink) {
+            breadcrumbLink.href = '/superadmin/admin-management/';
+            breadcrumbLink.textContent = 'Admin Management';
+        }
+        
+        // Update form action to preserve the from parameter
+        const form = document.querySelector('form[method="post"]');
+        if (form) {
+            const currentAction = form.getAttribute('action') || '';
+            const separator = currentAction.includes('?') ? '&' : '?';
+            form.setAttribute('action', currentAction + separator + 'from=admin-management');
+        }
+    }
+});
+</script>
 {% endblock %}

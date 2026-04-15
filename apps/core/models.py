@@ -10,6 +10,9 @@ class Plan(models.Model):
     """
     Subscription plan model with pricing and features
     """
+    
+    class Meta:
+        app_label = 'core'
     PLAN_TYPES = [
         ('basic', 'Basic'),
         ('standard', 'Standard'),
@@ -231,6 +234,9 @@ class PlanFeature(models.Model):
     """
     Individual features that can be associated with plans
     """
+    
+    class Meta:
+        app_label = 'core'
     FEATURE_TYPES = [
         ('boolean', 'Boolean'),
         ('number', 'Number'),
@@ -263,6 +269,9 @@ class PlanFeatureMapping(models.Model):
     """
     Many-to-many relationship between plans and features with values
     """
+    
+    class Meta:
+        app_label = 'core'
     plan = models.ForeignKey(Plan, on_delete=models.CASCADE, related_name='feature_mappings')
     feature = models.ForeignKey(PlanFeature, on_delete=models.CASCADE)
     value = models.JSONField(default=None, blank=True, help_text="Feature value for this plan")
@@ -284,6 +293,9 @@ class Subscription(models.Model):
     """
     User subscription model for tracking plan subscriptions
     """
+    
+    class Meta:
+        app_label = 'core'
     STATUS_CHOICES = [
         ('active', 'Active'),
         ('trialing', 'Trial'),
@@ -366,6 +378,9 @@ class Payment(models.Model):
     """
     Payment record model for tracking transactions
     """
+    
+    class Meta:
+        app_label = 'core'
     STATUS_CHOICES = [
         ('pending', 'Pending'),
         ('succeeded', 'Succeeded'),

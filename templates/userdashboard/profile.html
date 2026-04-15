@@ -88,7 +88,7 @@
 
         <section class="tickets">
           <h3>Basic information</h3>
-          <form id="profileForm" class="form mt-8" method="post">
+          <form id="profileForm" class="form mt-8" method="post" enctype="multipart/form-data">
             {% csrf_token %}
             <input type="hidden" name="action" value="profile">
             <div>
@@ -155,32 +155,24 @@
     // Function to handle file selection and auto-upload
     function handleFileSelect(input) {
       if (input.files && input.files[0]) {
-        // Create form data
-        const formData = new FormData();
-        formData.append('profile_picture', input.files[0]);
-        formData.append('action', 'profile');
-        
-        // Add CSRF token
-        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]');
-        if (csrfToken) {
-          formData.append('csrfmiddlewaretoken', csrfToken.value);
+        // Find the profile form and submit it with the file
+        const profileForm = document.getElementById('profileForm');
+        if (profileForm) {
+          // Create a new file input for the profile picture
+          const fileInput = document.createElement('input');
+          fileInput.type = 'file';
+          fileInput.name = 'profile_picture';
+          fileInput.style.display = 'none';
+          fileInput.files = input.files;
+          
+          // Add it to the form
+          profileForm.appendChild(fileInput);
+          
+          // Submit the form
+          profileForm.submit();
+        } else {
+          alert('Error: Profile form not found. Please refresh the page and try again.');
         }
-        
-        // Submit the form
-        fetch(window.location.href, {
-          method: 'POST',
-          body: formData
-        }).then(response => {
-          if (response.ok) {
-            // Reload the page to show the updated profile picture
-            window.location.reload();
-          } else {
-            alert('Error uploading profile picture. Please try again.');
-          }
-        }).catch(error => {
-          console.error('Error:', error);
-          alert('Error uploading profile picture. Please try again.');
-        });
       }
     }
 

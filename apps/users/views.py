@@ -707,7 +707,7 @@ def admin_login_view(request):
 
                 messages.error(request, 'Invalid username or password.')
 
-                return render(request, 'login.html')
+                return render(request, 'dashboards/admin_login.html')
 
         else:
 
@@ -735,7 +735,7 @@ def admin_login_view(request):
 
                     messages.error(request, 'Invalid username or password.')
 
-                    return render(request, 'login.html')
+                    return render(request, 'dashboards/admin_login.html')
 
         user = authenticate(request, username=lookup_username, password=password)
 
@@ -747,7 +747,7 @@ def admin_login_view(request):
 
                 messages.error(request, 'Admin account is inactive')
 
-                return render(request, 'login.html')
+                return render(request, 'dashboards/admin_login.html')
 
             
 
@@ -759,7 +759,7 @@ def admin_login_view(request):
 
                 messages.error(request, 'Admin account is inactive')
 
-                return render(request, 'login.html')
+                return render(request, 'dashboards/admin_login.html')
 
             
 
@@ -789,7 +789,7 @@ def admin_login_view(request):
 
                     messages.error(request, 'Admin account is inactive')
 
-                    return render(request, 'login.html')
+                    return render(request, 'dashboards/admin_login.html')
 
             except User.DoesNotExist:
 
@@ -807,7 +807,7 @@ def admin_login_view(request):
 
                     messages.error(request, 'Admin account is inactive')
 
-                    return render(request, 'login.html')
+                    return render(request, 'dashboards/admin_login.html')
 
             except User.DoesNotExist:
 
@@ -817,7 +817,7 @@ def admin_login_view(request):
 
             messages.error(request, 'Invalid admin credentials')
 
-    return render(request, 'login.html')
+    return render(request, 'dashboards/admin_login.html')
 
 
 
@@ -831,7 +831,11 @@ def agent_login_view(request):
 
     Only users whose profile role is 'Agent' are allowed to log in here.
 
+
+
     Successful login redirects to the Agent dashboard.
+
+
 
     """
 
@@ -871,7 +875,7 @@ def agent_login_view(request):
 
                 messages.error(request, 'Invalid username or password.')
 
-                return render(request, 'login.html')
+                return render(request, 'dashboards/agent_login.html')
 
         else:
 
@@ -899,7 +903,7 @@ def agent_login_view(request):
 
                     messages.error(request, 'Invalid username or password.')
 
-                    return render(request, 'login.html')
+                    return render(request, 'dashboards/agent_login.html')
 
 
 
@@ -913,7 +917,7 @@ def agent_login_view(request):
 
                 messages.error(request, 'Agent account is inactive')
 
-                return render(request, 'login.html')
+                return render(request, 'dashboards/agent_login.html')
 
             
 
@@ -925,7 +929,7 @@ def agent_login_view(request):
 
                 messages.error(request, 'Agent account is inactive')
 
-                return render(request, 'login.html')
+                return render(request, 'dashboards/agent_login.html')
 
             
 
@@ -935,7 +939,7 @@ def agent_login_view(request):
 
                 messages.error(request, 'Access denied. Agent role required.')
 
-                return render(request, 'login.html')
+                return render(request, 'dashboards/agent_login.html')
 
             
 
@@ -967,7 +971,7 @@ def agent_login_view(request):
 
                     messages.error(request, 'Agent account is inactive')
 
-                    return render(request, 'login.html')
+                    return render(request, 'dashboards/agent_login.html')
 
             except User.DoesNotExist:
 
@@ -985,7 +989,7 @@ def agent_login_view(request):
 
                     messages.error(request, 'Agent account is inactive')
 
-                    return render(request, 'login.html')
+                    return render(request, 'dashboards/agent_login.html')
 
             except User.DoesNotExist:
 
@@ -995,12 +999,7 @@ def agent_login_view(request):
 
         messages.error(request, 'Invalid username or password.')
 
-    return render(request, 'login.html')
-
-
-
-
-
+    return render(request, 'dashboards/agent_login.html')
 class AgentLoginAPIView(APIView):
 
     """API endpoint for agent login with proper HTTP status codes"""
@@ -1223,7 +1222,7 @@ def user_login_view(request):
 
                 errors['invalid'] = "User account is inactive"
 
-                return render(request, 'login.html', {'errors': errors, 'request_post': request.POST})
+                return render(request, 'dashboards/user_login.html', {'errors': errors, 'request_post': request.POST})
 
             
 
@@ -1235,7 +1234,7 @@ def user_login_view(request):
 
                 errors['invalid'] = "User account is inactive"
 
-                return render(request, 'login.html', {'errors': errors, 'request_post': request.POST})
+                return render(request, 'dashboards/user_login.html', {'errors': errors, 'request_post': request.POST})
 
             
 
@@ -1267,7 +1266,7 @@ def user_login_view(request):
 
                     errors['invalid'] = "User account is inactive"
 
-                    return render(request, 'login.html', {'errors': errors, 'request_post': request.POST})
+                    return render(request, 'dashboards/user_login.html', {'errors': errors, 'request_post': request.POST})
 
             except User.DoesNotExist:
 
@@ -1285,7 +1284,7 @@ def user_login_view(request):
 
                     errors['invalid'] = "User account is inactive"
 
-                    return render(request, 'login.html', {'errors': errors, 'request_post': request.POST})
+                    return render(request, 'dashboards/user_login.html', {'errors': errors, 'request_post': request.POST})
 
             except User.DoesNotExist:
 
@@ -1297,7 +1296,7 @@ def user_login_view(request):
 
 
 
-    return render(request, 'login.html', {'errors': errors, 'request_post': request.POST})
+    return render(request, 'dashboards/user_login.html', {'errors': errors, 'request_post': request.POST})
 
 
 
@@ -1683,54 +1682,78 @@ class AgentsListView(APIView):
 
             return Response({'detail': 'Forbidden'}, status=status.HTTP_403_FORBIDDEN)
 
+        # Get pagination and filter parameters
+        page = int(request.GET.get('page', 1))
+        page_size = int(request.GET.get('page_size', 10))
+        search = request.GET.get('search', '').strip()
+        role_filter = request.GET.get('role', '').strip()
+        status_filter = request.GET.get('status', '').strip()
+
         # Consider agents as users whose role is specifically Agent (exclude Admin and other roles)
         qs = (
             User.objects
             .select_related('userprofile', 'userprofile__role')
-            .annotate(
-                tickets_count=Count('assigned_tickets'),
-                avg_rating=Avg('received_ratings__rating')
-            )
             .filter(
                 userprofile__role__name='Agent'
             )
-            .order_by('username')
         )
+
+        # Apply filters
+        if search:
+            qs = qs.filter(
+                Q(username__icontains=search) |
+                Q(first_name__icontains=search) |
+                Q(last_name__icontains=search) |
+                Q(email__icontains=search)
+            )
+        
+        if role_filter:
+            qs = qs.filter(userprofile__role__name__icontains=role_filter)
+        
+        if status_filter:
+            is_active = status_filter.lower() == 'active'
+            qs = qs.filter(userprofile__is_active=is_active)
+
+        # Order and paginate
+        qs = qs.order_by('username')
+        
+        # Get total count before pagination
+        total_count = qs.count()
+        
+        # Apply pagination
+        start_idx = (page - 1) * page_size
+        end_idx = start_idx + page_size
+        qs = qs[start_idx:end_idx]
 
         data = []
         for u in qs:
-
             role_name = getattr(getattr(getattr(u, 'userprofile', None), 'role', None), 'name', '')
-
             department = getattr(getattr(u, 'userprofile', None), 'department', '') or ''
-
             is_active = getattr(getattr(u, 'userprofile', None), 'is_active', True)
 
             data.append({
-
                 'id': u.id,
-
                 'username': u.username,  # Add username for login reference
-
                 'name': u.get_full_name() or u.username,
-
                 'email': u.email,
-
                 'role': role_name,
-
                 'department': department,
-
-                'tickets_count': u.tickets_count or 0,
-
+                'assigned_tickets_count': u.tickets_count or 0,
                 'avg_rating': round(u.avg_rating, 1) if u.avg_rating else None,
-
                 'is_active': bool(is_active),
-
                 'initials': (u.get_full_name() or u.username)[:2].upper(),
-
             })
 
-        return Response({'results': data, 'total': len(data), 'active': sum(1 for a in data if a['is_active'])})
+        total_pages = (total_count + page_size - 1) // page_size  # Ceiling division
+        
+                
+        return Response({
+            'results': data, 
+            'total': total_count, 
+            'page': page,
+            'total_pages': total_pages,
+            'active': sum(1 for a in data if a['is_active'])
+        })
 
 
 
@@ -3716,6 +3739,533 @@ class SetUserPasswordView(APIView):
 
             print(f"DEBUG: Failed to set password: {str(e)}")
             return Response({'detail': f'Failed to set password: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+# Dashboard-specific forgot password views
+
+def admin_forgot_password(request):
+    """Handle forgot password request for admin dashboard"""
+    if request.method == 'POST':
+        email = request.POST.get('email', '').strip()
+        
+        if not email:
+            messages.error(request, 'Email address is required')
+            return render(request, 'dashboards/admin_forgot_password.html')
+        
+        # Check if email exists and belongs to an admin
+        from django.contrib.auth.models import User as DjangoUser
+        from users.models import UserProfile
+        
+        user = DjangoUser.objects.filter(email=email).first()
+        
+        if user:
+            # Check if user is admin
+            try:
+                profile = UserProfile.objects.get(user=user)
+                is_admin = profile.role and profile.role.name.lower() in ['admin', 'superadmin']
+            except UserProfile.DoesNotExist:
+                is_admin = False
+            
+            if is_admin:
+                # Generate 6-digit verification code
+                import random
+                verification_code = f"{random.randint(100000, 999999)}"
+                
+                # Store code in session (valid for 15 minutes)
+                request.session[f'reset_code_{email}'] = {
+                    'code': verification_code,
+                    'timestamp': str(timezone.now().timestamp()),
+                    'email': email
+                }
+                request.session.modified = True
+                
+                # Send email with verification code
+                try:
+                    from django.core.mail import send_mail
+                    from django.conf import settings
+                    
+                    subject = 'Admin Password Reset Code - TicketHub'
+                    message = f'''
+Hello Admin,
+
+You requested to reset your password for TicketHub Admin Dashboard.
+
+Your verification code is: {verification_code}
+
+This code will expire in 15 minutes.
+
+If you didn't request this password reset, please ignore this email.
+
+Best regards,
+TicketHub Team
+                    '''
+                    
+                    send_mail(
+                        subject,
+                        message,
+                        settings.DEFAULT_FROM_EMAIL,
+                        [email],
+                        fail_silently=False,
+                    )
+                    
+                    messages.success(request, f'Verification code sent to {email}. Please check your email.')
+                    return redirect(f'/users/admin-reset-password/?email={email}')
+                    
+                except Exception as e:
+                    print(f"Error sending email: {e}")
+                    messages.error(request, 'Failed to send verification code. Please try again.')
+            else:
+                # User exists but is not an admin
+                messages.error(request, 'Your email is not registered as an Admin')
+                return render(request, 'dashboards/admin_forgot_password.html')
+        else:
+            # Email not registered
+            messages.error(request, 'Your email is not registered')
+            return render(request, 'dashboards/admin_forgot_password.html')
+    
+    return render(request, 'dashboards/admin_forgot_password.html')
+
+
+def admin_reset_password(request):
+    """Handle admin password reset with verification code"""
+    # Get email from POST, GET, or session
+    email = request.POST.get('email') or request.GET.get('email')
+    
+    # If no email in POST/GET, try to get it from session
+    if not email:
+        # Find any reset code in session to get the email
+        for key, value in request.session.items():
+            if key.startswith('reset_code_') and isinstance(value, dict):
+                email = value.get('email')
+                break
+    
+    if not email:
+        messages.error(request, 'Email is required. Please start the forgot password process again.')
+        return redirect('users:admin_forgot_password')
+    
+    if request.method == 'POST':
+        # Get verification code from form inputs
+        code = ''.join([
+            request.POST.get('code1', ''),
+            request.POST.get('code2', ''),
+            request.POST.get('code3', ''),
+            request.POST.get('code4', ''),
+            request.POST.get('code5', ''),
+            request.POST.get('code6', '')
+        ])
+        
+        new_password = request.POST.get('new_password', '')
+        confirm_password = request.POST.get('confirm_password', '')
+        
+        # Validate inputs
+        if len(code) != 6:
+            messages.error(request, 'Invalid verification code')
+            return render(request, 'dashboards/admin_reset_password.html', {'email': email})
+        
+        if new_password != confirm_password:
+            messages.error(request, 'Passwords do not match')
+            return render(request, 'dashboards/admin_reset_password.html', {'email': email})
+        
+        if len(new_password) < 8:
+            messages.error(request, 'Password must be at least 8 characters long')
+            return render(request, 'dashboards/admin_reset_password.html', {'email': email})
+        
+        # Check verification code
+        session_data = request.session.get(f'reset_code_{email}')
+        
+        if not session_data:
+            messages.error(request, 'Verification code expired or invalid. Please request a new one.')
+            return redirect('users:admin_forgot_password')
+        
+        # Check if code is valid (15 minutes expiry)
+        import time
+        timestamp = float(session_data['timestamp'])
+        current_time = timezone.now().timestamp()
+        
+        if current_time - timestamp > 900:  # 15 minutes = 900 seconds
+            del request.session[f'reset_code_{email}']
+            request.session.modified = True
+            messages.error(request, 'Verification code expired. Please request a new one.')
+            return redirect('users:admin_forgot_password')
+        
+        if session_data['code'] != code:
+            messages.error(request, 'Invalid verification code')
+            return render(request, 'dashboards/admin_reset_password.html', {'email': email})
+        
+        # Code is valid, reset password
+        try:
+            from django.contrib.auth.models import User as DjangoUser
+            
+            user = DjangoUser.objects.get(email=email)
+            user.set_password(new_password)
+            user.save()
+            
+            # Clear the session data
+            del request.session[f'reset_code_{email}']
+            request.session.modified = True
+            
+            messages.success(request, 'Password reset successfully! Please login with your new password.')
+            return redirect('users:admin_login')
+            
+        except DjangoUser.DoesNotExist:
+            messages.error(request, 'User not found')
+            return redirect('users:admin_forgot_password')
+        except Exception as e:
+            print(f"Error resetting password: {e}")
+            messages.error(request, 'Failed to reset password. Please try again.')
+            return render(request, 'dashboards/admin_reset_password.html', {'email': email})
+    
+    return render(request, 'dashboards/admin_reset_password.html', {'email': email})
+
+
+def agent_forgot_password(request):
+    """Handle forgot password request for agent dashboard"""
+    if request.method == 'POST':
+        email = request.POST.get('email', '').strip()
+        
+        if not email:
+            messages.error(request, 'Email address is required')
+            return render(request, 'dashboards/agent_forgot_password.html')
+        
+        # Check if email exists and belongs to an agent
+        from django.contrib.auth.models import User as DjangoUser
+        from users.models import UserProfile
+        
+        user = DjangoUser.objects.filter(email=email).first()
+        
+        if user:
+            # Check if user is agent
+            try:
+                profile = UserProfile.objects.get(user=user)
+                is_agent = profile.role and profile.role.name.lower() == 'agent'
+            except UserProfile.DoesNotExist:
+                is_agent = False
+            
+            if is_agent:
+                # Generate 6-digit verification code
+                import random
+                verification_code = f"{random.randint(100000, 999999)}"
+                
+                # Store code in session (valid for 15 minutes)
+                request.session[f'reset_code_{email}'] = {
+                    'code': verification_code,
+                    'timestamp': str(timezone.now().timestamp()),
+                    'email': email
+                }
+                request.session.modified = True
+                
+                # Send email with verification code
+                try:
+                    from django.core.mail import send_mail
+                    from django.conf import settings
+                    
+                    subject = 'Agent Password Reset Code - TicketHub'
+                    message = f'''
+Hello Agent,
+
+You requested to reset your password for TicketHub Agent Dashboard.
+
+Your verification code is: {verification_code}
+
+This code will expire in 15 minutes.
+
+If you didn't request this password reset, please ignore this email.
+
+Best regards,
+TicketHub Team
+                    '''
+                    
+                    send_mail(
+                        subject,
+                        message,
+                        settings.DEFAULT_FROM_EMAIL,
+                        [email],
+                        fail_silently=False,
+                    )
+                    
+                    messages.success(request, f'Verification code sent to {email}. Please check your email.')
+                    return redirect(f'/users/agent-reset-password/?email={email}')
+                    
+                except Exception as e:
+                    print(f"Error sending email: {e}")
+                    messages.error(request, 'Failed to send verification code. Please try again.')
+            else:
+                # User exists but is not an agent
+                messages.error(request, 'Your email is not registered as an Agent')
+                return render(request, 'dashboards/agent_forgot_password.html')
+        else:
+            # Email not registered
+            messages.error(request, 'Your email is not registered')
+            return render(request, 'dashboards/agent_forgot_password.html')
+    
+    return render(request, 'dashboards/agent_forgot_password.html')
+
+
+def agent_reset_password(request):
+    """Handle agent password reset with verification code"""
+    # Get email from POST, GET, or session
+    email = request.POST.get('email') or request.GET.get('email')
+    
+    # If no email in POST/GET, try to get it from session
+    if not email:
+        # Find any reset code in session to get the email
+        for key, value in request.session.items():
+            if key.startswith('reset_code_') and isinstance(value, dict):
+                email = value.get('email')
+                break
+    
+    if not email:
+        messages.error(request, 'Email is required. Please start the forgot password process again.')
+        return redirect('users:agent_forgot_password')
+    
+    if request.method == 'POST':
+        # Get verification code from form inputs
+        code = ''.join([
+            request.POST.get('code1', ''),
+            request.POST.get('code2', ''),
+            request.POST.get('code3', ''),
+            request.POST.get('code4', ''),
+            request.POST.get('code5', ''),
+            request.POST.get('code6', '')
+        ])
+        
+        new_password = request.POST.get('new_password', '')
+        confirm_password = request.POST.get('confirm_password', '')
+        
+        # Validate inputs
+        if len(code) != 6:
+            messages.error(request, 'Invalid verification code')
+            return render(request, 'dashboards/agent_reset_password.html', {'email': email})
+        
+        if new_password != confirm_password:
+            messages.error(request, 'Passwords do not match')
+            return render(request, 'dashboards/agent_reset_password.html', {'email': email})
+        
+        if len(new_password) < 8:
+            messages.error(request, 'Password must be at least 8 characters long')
+            return render(request, 'dashboards/agent_reset_password.html', {'email': email})
+        
+        # Check verification code
+        session_data = request.session.get(f'reset_code_{email}')
+        
+        if not session_data:
+            messages.error(request, 'Verification code expired or invalid. Please request a new one.')
+            return redirect('users:agent_forgot_password')
+        
+        # Check if code is valid (15 minutes expiry)
+        import time
+        timestamp = float(session_data['timestamp'])
+        current_time = timezone.now().timestamp()
+        
+        if current_time - timestamp > 900:  # 15 minutes = 900 seconds
+            del request.session[f'reset_code_{email}']
+            request.session.modified = True
+            messages.error(request, 'Verification code expired. Please request a new one.')
+            return redirect('users:agent_forgot_password')
+        
+        if session_data['code'] != code:
+            messages.error(request, 'Invalid verification code')
+            return render(request, 'dashboards/agent_reset_password.html', {'email': email})
+        
+        # Code is valid, reset password
+        try:
+            from django.contrib.auth.models import User as DjangoUser
+            
+            user = DjangoUser.objects.get(email=email)
+            user.set_password(new_password)
+            user.save()
+            
+            # Clear the session data
+            del request.session[f'reset_code_{email}']
+            request.session.modified = True
+            
+            messages.success(request, 'Password reset successfully! Please login with your new password.')
+            return redirect('users:agent_login')
+            
+        except DjangoUser.DoesNotExist:
+            messages.error(request, 'User not found')
+            return redirect('users:agent_forgot_password')
+        except Exception as e:
+            print(f"Error resetting password: {e}")
+            messages.error(request, 'Failed to reset password. Please try again.')
+            return render(request, 'dashboards/agent_reset_password.html', {'email': email})
+    
+    return render(request, 'dashboards/agent_reset_password.html', {'email': email})
+
+
+def user_forgot_password(request):
+    """Handle forgot password request for user dashboard"""
+    if request.method == 'POST':
+        email = request.POST.get('email', '').strip()
+        
+        if not email:
+            messages.error(request, 'Email address is required')
+            return render(request, 'dashboards/user_forgot_password.html')
+        
+        # Check if email exists and belongs to a regular user
+        from django.contrib.auth.models import User as DjangoUser
+        from users.models import UserProfile
+        
+        user = DjangoUser.objects.filter(email=email).first()
+        
+        if user:
+            # Check if user is regular user (not admin, agent, or superadmin)
+            try:
+                profile = UserProfile.objects.get(user=user)
+                is_regular_user = profile.role and profile.role.name.lower() in ['user', 'customer']
+            except UserProfile.DoesNotExist:
+                is_regular_user = False
+            
+            if is_regular_user:
+                # Generate 6-digit verification code
+                import random
+                verification_code = f"{random.randint(100000, 999999)}"
+                
+                # Store code in session (valid for 15 minutes)
+                request.session[f'reset_code_{email}'] = {
+                    'code': verification_code,
+                    'timestamp': str(timezone.now().timestamp()),
+                    'email': email
+                }
+                request.session.modified = True
+                
+                # Send email with verification code
+                try:
+                    from django.core.mail import send_mail
+                    from django.conf import settings
+                    
+                    subject = 'User Password Reset Code - TicketHub'
+                    message = f'''
+Hello User,
+
+You requested to reset your password for TicketHub User Dashboard.
+
+Your verification code is: {verification_code}
+
+This code will expire in 15 minutes.
+
+If you didn't request this password reset, please ignore this email.
+
+Best regards,
+TicketHub Team
+                    '''
+                    
+                    send_mail(
+                        subject,
+                        message,
+                        settings.DEFAULT_FROM_EMAIL,
+                        [email],
+                        fail_silently=False,
+                    )
+                    
+                    messages.success(request, f'Verification code sent to {email}. Please check your email.')
+                    return redirect(f'/users/user-reset-password/?email={email}')
+                    
+                except Exception as e:
+                    print(f"Error sending email: {e}")
+                    messages.error(request, 'Failed to send verification code. Please try again.')
+            else:
+                # User exists but is not a regular user
+                messages.error(request, 'Your email is not registered as a User')
+                return render(request, 'dashboards/user_forgot_password.html')
+        else:
+            # Email not registered
+            messages.error(request, 'Your email is not registered')
+            return render(request, 'dashboards/user_forgot_password.html')
+    
+    return render(request, 'dashboards/user_forgot_password.html')
+
+
+def user_reset_password(request):
+    """Handle user password reset with verification code"""
+    # Get email from POST, GET, or session
+    email = request.POST.get('email') or request.GET.get('email')
+    
+    # If no email in POST/GET, try to get it from session
+    if not email:
+        # Find any reset code in session to get the email
+        for key, value in request.session.items():
+            if key.startswith('reset_code_') and isinstance(value, dict):
+                email = value.get('email')
+                break
+    
+    if not email:
+        messages.error(request, 'Email is required. Please start the forgot password process again.')
+        return redirect('users:user_forgot_password')
+    
+    if request.method == 'POST':
+        # Get verification code from form inputs
+        code = ''.join([
+            request.POST.get('code1', ''),
+            request.POST.get('code2', ''),
+            request.POST.get('code3', ''),
+            request.POST.get('code4', ''),
+            request.POST.get('code5', ''),
+            request.POST.get('code6', '')
+        ])
+        
+        new_password = request.POST.get('new_password', '')
+        confirm_password = request.POST.get('confirm_password', '')
+        
+        # Validate inputs
+        if len(code) != 6:
+            messages.error(request, 'Invalid verification code')
+            return render(request, 'dashboards/user_reset_password.html', {'email': email})
+        
+        if new_password != confirm_password:
+            messages.error(request, 'Passwords do not match')
+            return render(request, 'dashboards/user_reset_password.html', {'email': email})
+        
+        if len(new_password) < 8:
+            messages.error(request, 'Password must be at least 8 characters long')
+            return render(request, 'dashboards/user_reset_password.html', {'email': email})
+        
+        # Check verification code
+        session_data = request.session.get(f'reset_code_{email}')
+        
+        if not session_data:
+            messages.error(request, 'Verification code expired or invalid. Please request a new one.')
+            return redirect('users:user_forgot_password')
+        
+        # Check if code is valid (15 minutes expiry)
+        import time
+        timestamp = float(session_data['timestamp'])
+        current_time = timezone.now().timestamp()
+        
+        if current_time - timestamp > 900:  # 15 minutes = 900 seconds
+            del request.session[f'reset_code_{email}']
+            request.session.modified = True
+            messages.error(request, 'Verification code expired. Please request a new one.')
+            return redirect('users:user_forgot_password')
+        
+        if session_data['code'] != code:
+            messages.error(request, 'Invalid verification code')
+            return render(request, 'dashboards/user_reset_password.html', {'email': email})
+        
+        # Code is valid, reset password
+        try:
+            from django.contrib.auth.models import User as DjangoUser
+            
+            user = DjangoUser.objects.get(email=email)
+            user.set_password(new_password)
+            user.save()
+            
+            # Clear the session data
+            del request.session[f'reset_code_{email}']
+            request.session.modified = True
+            
+            messages.success(request, 'Password reset successfully! Please login with your new password.')
+            return redirect('users:user_login')
+            
+        except DjangoUser.DoesNotExist:
+            messages.error(request, 'User not found')
+            return redirect('users:user_forgot_password')
+        except Exception as e:
+            print(f"Error resetting password: {e}")
+            messages.error(request, 'Failed to reset password. Please try again.')
+            return render(request, 'dashboards/user_reset_password.html', {'email': email})
+    
+    return render(request, 'dashboards/user_reset_password.html', {'email': email})
 
 
 

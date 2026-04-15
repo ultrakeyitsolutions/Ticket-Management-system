@@ -18,6 +18,7 @@ urlpatterns = [
     path("tickets/", include(("tickets.urls", 'tickets'), namespace='tickets')),
     path('superadmin/', include(('superadmin.urls', 'superadmin'), namespace='superadmin')),
     path('payments/', include(('payments.urls', 'payments'), namespace='payments')),
+    path('subscriptions/', include(('subscriptions.urls', 'subscriptions'), namespace='subscriptions')),
     path('', include(('core.urls', 'core'), namespace='core')),
 ]
 

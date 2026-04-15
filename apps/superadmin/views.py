@@ -1,8 +1,11 @@
-from django.shortcuts import render, redirect, get_object_or_404
+﻿from django.shortcuts import render, redirect, get_object_or_404
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.conf import settings
 
 from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.hashers import make_password
+from django.contrib.auth.models import User
+from users.models import UserProfile, Role
 
 
 
@@ -54,7 +57,9 @@ from django.utils import timezone
 
 
 
-from .models import Company, Plan, SuperAdminSettings, NotificationTemplate, Subscription, Payment, SubscriptionMetrics, Notification
+from .models import Company, SuperAdminSettings, NotificationTemplate, Subscription, Payment, SubscriptionMetrics, Notification
+from django.apps import apps
+Plan = apps.get_model('superadmin', 'Plan')
 
 
 
@@ -219,12 +224,14 @@ def should_show_payment_modal(user):
 
         # DECISION LOGIC:
         # 1. User has active core subscription: Don't show modal (checked above)
-        # 2. User has active superadmin subscription (including active trial): Don't show modal
+        # 2. User has active superadmin subscription (including active trial): Show modal for upgrade option
         # 3. User has expired trial: Show modal
         # 4. Admin/Regular users without any subscription: Show modal
         
-        if has_active_subscription:
-            return False  # Don't show modal if user has active subscription or active trial
+        # NEW: Show modal for trial users so they can upgrade during active trial
+        if has_active_subscription and not has_expired_trial:
+            # User has active subscription or trial - show modal for upgrade option
+            return True  # Allow trial users to see upgrade option
         
         # Show modal if trial has expired OR user has no subscription
         if has_expired_trial or (is_admin_or_staff or is_regular_user):
@@ -1141,7 +1148,7 @@ def plan_add(request):
         description = request.POST.get('description', '').strip()
         price = request.POST.get('price', '').strip()
         setup_fee = request.POST.get('setup_fee', '').strip()
-        max_users = request.POST.get('max_users', '').strip()
+        max_tickets = request.POST.get('max_tickets', '').strip()
         max_projects = request.POST.get('max_projects', '').strip()
         storage_limit = request.POST.get('storage_limit', '').strip()
         bandwidth_limit = request.POST.get('bandwidth_limit', '').strip()
@@ -1151,7 +1158,7 @@ def plan_add(request):
         features = request.POST.getlist('features')
         
         # Validate required fields
-        if not name or not description or not price or not setup_fee or not max_users or not max_projects or not storage_limit or not bandwidth_limit:
+        if not name or not description or not price or not setup_fee or not max_tickets or not max_projects or not storage_limit or not bandwidth_limit:
             messages.error(request, 'All required fields must be filled.')
             return redirect('superadmin:plan_add')
         
@@ -1161,7 +1168,7 @@ def plan_add(request):
                 name=name,
                 price=float(price),
                 billing_cycle='monthly',  # Default to monthly
-                users=int(max_users),
+                tickets=int(max_tickets),
                 storage=f"{storage_limit}GB",
                 status='active' if is_active else 'inactive',
                 is_active=is_active
@@ -1223,7 +1230,7 @@ def plan_edit(request, plan_id):
         name = request.POST.get('name', '').strip()
         price = request.POST.get('price', '').strip()
         billing_cycle = request.POST.get('billing_cycle', 'monthly')
-        users = request.POST.get('users', '5')
+        tickets = request.POST.get('tickets', '5')
         storage = request.POST.get('storage', '10GB')
         features = request.POST.getlist('features', [])
         
@@ -1234,7 +1241,7 @@ def plan_edit(request, plan_id):
                 plan.name = name
                 plan.price = price
                 plan.billing_cycle = billing_cycle
-                plan.users = int(users) if users != '999' else 999
+                plan.tickets = int(tickets) if tickets != '999' else 999
                 plan.storage = storage
                 plan.features = features
                 plan.save()
@@ -1277,6 +1284,33 @@ def plan_deactivate(request, plan_id):
     return redirect('superadmin:plans_list')
 
 @login_required(login_url='superadmin:superadmin_login')
+def plan_activate(request, plan_id):
+    if not is_admin_or_superadmin(request.user):
+        return redirect('superadmin:superadmin_login')
+    
+    if request.method == 'POST':
+        try:
+            plan = get_object_or_404(Plan, id=plan_id)
+            
+            # Activate the plan
+            plan.is_active = True
+            plan.status = 'active'
+            plan.save()
+            
+            messages.success(request, f'Plan "{plan.name}" has been activated and is now available for new subscriptions.')
+            return redirect('superadmin:plans_list')
+            
+        except Plan.DoesNotExist:
+            messages.error(request, 'Plan not found.')
+            return redirect('superadmin:plans_list')
+        except Exception as e:
+            messages.error(request, f'Error activating plan: {str(e)}')
+            return redirect('superadmin:plans_list')
+    
+    # If not POST, redirect to plans list
+    return redirect('superadmin:plans_list')
+
+@login_required(login_url='superadmin:superadmin_login')
 def plan_list(request):
     if not is_admin_or_superadmin(request.user):
         return redirect('superadmin:superadmin_login')
@@ -1287,13 +1321,28 @@ def plan_list(request):
     plans_with_status = []
     for plan in plans:
         companies_count = Company.objects.filter(plan=plan).count()
-        subscriptions_count = Subscription.objects.filter(plan=plan).count()
+        # Use UserSubscription instead of Subscription
+        from subscriptions.models import UserSubscription
+        subscriptions_count = UserSubscription.objects.filter(plan=plan).count()
+        tickets_count = plan.ticket_set.count()
+        
+        # Calculate revenue from this plan
+        revenue = 0
+        if subscriptions_count > 0:
+            from subscriptions.models import PaymentTransaction
+            completed_payments = PaymentTransaction.objects.filter(
+                plan=plan, 
+                status='completed'
+            )
+            revenue = sum(payment.amount for payment in completed_payments)
         
         plans_with_status.append({
             'plan': plan,
             'companies_count': companies_count,
             'subscriptions_count': subscriptions_count,
-            'is_in_use': companies_count > 0 or subscriptions_count > 0
+            'tickets_count': tickets_count,
+            'revenue': revenue,
+            'is_in_use': companies_count > 0 or subscriptions_count > 0 or tickets_count > 0
         })
     
     # Add user profile to context for header display
@@ -1333,7 +1382,8 @@ def companies_list(request):
     context = {
         'companies': companies,
         'sa_page': 'companies',
-        'user_profile': profile  # Add user profile for header display
+        'user_profile': profile,  # Add user profile for header display
+        'plans': Plan.objects.all()  # Add all available plans for the dropdown
     }
     
     # Handle AJAX request for partial refresh
@@ -1346,111 +1396,140 @@ def companies_list(request):
 def company_create(request):
     if not is_admin_or_superadmin(request.user):
         return redirect('superadmin:superadmin_login')
-    
+
     if request.method == 'POST':
-        # Handle AJAX request
-        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+
+        # DEBUG: Track if this function is called multiple times
+        import time
+        timestamp = time.time()
+        print(f"\n=== COMPANY CREATE CALLED at {timestamp} ===")
+        print(f"Email: {request.POST.get('email', '')}")
+        print(f"Is AJAX: {is_ajax}")
+        print(f"User: {request.user.username}")
+
+        # Collect form data
+        name                = request.POST.get('name', '').strip()
+        email               = request.POST.get('email', '').strip()
+        phone               = request.POST.get('phone', '').strip()
+        address             = request.POST.get('address', '').strip()
+        password            = request.POST.get('password', '').strip()
+        plan_id             = request.POST.get('plan', '')
+        subscription_status = request.POST.get('subscription_status', '')
+
+        def fail(msg):
+            if is_ajax:
+                return JsonResponse({'success': False, 'message': msg})
+            messages.error(request, msg)
+            return redirect('superadmin:companies_list')
+
+        # Validation
+        if not name or not email or not password:
+            return fail('Company name, email, and password are required.')
+
+        if len(password) < 8:
+            return fail('Password must be at least 8 characters long.')
+
+        import re
+        if not re.match(r'^[^\s@]+@[^\s@]+\.[^\s@]+$', email):
+            return fail('Please enter a valid email address.')
+
+        if phone and (not phone.isdigit() or len(phone) != 10):
+            return fail('Phone number must be exactly 10 digits.')
+
+        if Company.objects.filter(email=email).exists():
+            return fail(f'A company with email "{email}" already exists.')
+
+        valid_statuses = ['trial', 'active', 'expired', 'cancelled']
+        if subscription_status not in valid_statuses:
+            return fail('Please select a valid subscription status.')
+
+        # Resolve plan
+        selected_plan = None
+        if plan_id:
             try:
-                # Get form data
-                name = request.POST.get('name', '').strip()
-                email = request.POST.get('email', '').strip()
-                phone = request.POST.get('phone', '').strip()
-                address = request.POST.get('address', '').strip()
-                plan_name = request.POST.get('plan', '')
-                subscription_status = request.POST.get('subscription_status', 'trial')
-                
-                # Validate required fields
-                if not name or not email:
-                    return JsonResponse({
-                        'success': False,
-                        'message': 'Company name and email are required.'
-                    })
-                
-                # Validate email format
-                import re
-                email_pattern = r'^[^\s@]+@[^\s@]+\.[^\s@]+$'
-                if not re.match(email_pattern, email):
-                    return JsonResponse({
-                        'success': False,
-                        'message': 'Please enter a valid email address.'
-                    })
-                
-                # Check if email already exists
-                if Company.objects.filter(email=email).exists():
-                    return JsonResponse({
-                        'success': False,
-                        'message': 'A company with this email already exists.'
-                    })
-                
-                # Create company
-                company = Company.objects.create(
-                    name=name,
-                    email=email,
-                    phone=phone,
-                    address=address,
-                    subscription_status=subscription_status,
-                    is_active=True
+                selected_plan = Plan.objects.get(id=plan_id)
+            except Plan.DoesNotExist:
+                return fail('Selected plan does not exist.')
+
+        # Build a unique username that won't clash
+        # Use a short random suffix so the auto-created User doesn't
+        # trigger any "create company for <username>" signals with a
+        # mangled name like "hello_gmail_com's Company".
+        import uuid as _uuid
+        base_username = email.lower().replace('@', '_at_').replace('.', '_')[:40]
+        username = base_username
+        counter  = 1
+        while User.objects.filter(username=username).exists():
+            username = f"{base_username}_{counter}"
+            counter += 1
+
+        try:
+            # Create Django User
+            parts = name.split()
+            user = User.objects.create_user(
+                username=username,
+                email=email,
+                password=password,
+                first_name=parts[0] if parts else '',
+                last_name=' '.join(parts[1:]) if len(parts) > 1 else '',
+            )
+
+            # Update / create UserProfile
+            user_profile = getattr(user, 'userprofile', None)
+            if user_profile:
+                user_profile.phone   = phone
+                user_profile.address = address
+                user_profile.save()
+            else:
+                user_role    = Role.objects.get_or_create(name='User')[0]
+                user_profile = UserProfile.objects.create(
+                    user=user, role=user_role, phone=phone, address=address
                 )
-                
-                # Add plan if specified
-                if plan_name:
-                    try:
-                        plan = Plan.objects.get(name__iexact=plan_name)
-                        company.plan = plan
-                        company.save()
-                    except Plan.DoesNotExist:
-                        pass
-                
-                return JsonResponse({
-                    'success': True,
-                    'message': f'Company "{name}" created successfully!',
-                    'company_id': company.id
-                })
-                
-            except Exception as e:
-                return JsonResponse({
-                    'success': False,
-                    'message': f'Error creating company: {str(e)}'
-                })
-        else:
-            # Handle regular form submission (fallback)
-            name = request.POST.get('name', '').strip()
-            email = request.POST.get('email', '').strip()
-            phone = request.POST.get('phone', '').strip()
-            address = request.POST.get('address', '').strip()
-            plan_name = request.POST.get('plan', '')
-            subscription_status = request.POST.get('subscription_status', 'trial')
-            
-            if not name or not email:
-                messages.error(request, 'Company name and email are required.')
-                return redirect('superadmin:companies_list')
-            
+
+            # Create Company (this is the REAL company record)
+            print(f"DEBUG: About to create company with email: {email}")
             company = Company.objects.create(
                 name=name,
                 email=email,
                 phone=phone,
                 address=address,
+                password=make_password(password),
                 subscription_status=subscription_status,
-                is_active=True
+                plan=selected_plan,
+                is_active=True,
             )
-            
-            if plan_name:
-                try:
-                    plan = Plan.objects.get(name__iexact=plan_name)
-                    company.plan = plan
-                    company.save()
-                except Plan.DoesNotExist:
-                    pass
-            
-            messages.success(request, f'Company "{name}" created successfully!')
-            return redirect('superadmin:companies_list')
-    
-    # GET request - render company creation form
-    context = {
+            print(f"DEBUG: Company created successfully with ID: {company.id}")
+            company.users.add(user_profile)
+
+            # Delete any auto-generated ghost company for this user
+            # Some signals create "<username> Company" or "<username>@company.com"
+            # ghost companies when a User is created. Remove them now.
+            ghost_name  = f'{username} Company'
+            ghost_email = f'{username}@company.com'
+            Company.objects.filter(
+                name=ghost_name,
+                email=ghost_email,
+            ).exclude(id=company.id).delete()
+
+        except Exception as e:
+            return fail(f'Error creating company: {str(e)}')
+
+        if is_ajax:
+            return JsonResponse({
+                'success': True,
+                'message': f'Company "{name}" created successfully!',
+                'company_id': company.id,
+            })
+
+        messages.success(request, f'Company "{name}" created successfully!')
+        return redirect('superadmin:companies_list')
+
+    # GET request
+    return render(request, 'superadmin/company_add.html', {
         'sa_page': 'companies',
-        'plans': Plan.objects.all()
-    }
-    return render(request, 'superadmin/company_add.html', context)
+        'plans': Plan.objects.filter(is_active=True),
+    })
 
 @login_required(login_url='superadmin:superadmin_login')
 def company_detail(request, company_id):
@@ -1494,6 +1573,8 @@ def company_edit(request, company_id):
         # Validate required fields
         if not name or not email:
             messages.error(request, 'Name and email are required.')
+        elif not phone or not phone.isdigit() or len(phone) != 10:
+            messages.error(request, 'Phone number must be exactly 10 digits.')
         else:
             # Update company
             company.name = name
@@ -1692,221 +1773,6 @@ def subscriptions_list(request):
     return render(request, 'superadmin/subscriptions.html', context)
 
 @login_required(login_url='superadmin:superadmin_login')
-def suspend_subscription(request, subscription_id):
-    """Suspend a subscription"""
-    if not is_admin_or_superadmin(request.user):
-        return JsonResponse({'error': 'Permission denied'}, status=403)
-    
-    if request.method != 'POST':
-        return JsonResponse({'error': 'Only POST method allowed'}, status=405)
-    
-    try:
-        subscription = Subscription.objects.get(id=subscription_id)
-        
-        if subscription.status != 'active':
-            return JsonResponse({'error': 'Only active subscriptions can be suspended'}, status=400)
-        
-        # Update subscription status to suspended
-        subscription.status = 'suspended'
-        subscription.save(update_fields=['status'])
-        
-        return JsonResponse({
-            'success': True,
-            'message': 'Subscription suspended successfully',
-            'subscription_id': subscription.id,
-            'new_status': 'suspended'
-        })
-        
-    except Subscription.DoesNotExist:
-        return JsonResponse({'error': 'Subscription not found'}, status=404)
-    except Exception as e:
-        return JsonResponse({'error': str(e)}, status=500)
-
-
-@login_required(login_url='superadmin:superadmin_login')
-def activate_subscription(request, subscription_id):
-    """Activate a subscription"""
-    if not is_admin_or_superadmin(request.user):
-        return JsonResponse({'error': 'Permission denied'}, status=403)
-    
-    if request.method != 'POST':
-        return JsonResponse({'error': 'Only POST method allowed'}, status=405)
-    
-    try:
-        subscription = Subscription.objects.get(id=subscription_id)
-        
-        if subscription.status not in ['suspended', 'trial']:
-            return JsonResponse({'error': 'Only suspended or trial subscriptions can be activated'}, status=400)
-        
-        # Update subscription status to active
-        subscription.status = 'active'
-        subscription.save(update_fields=['status'])
-        
-        return JsonResponse({
-            'success': True,
-            'message': 'Subscription activated successfully',
-            'subscription_id': subscription.id,
-            'new_status': 'active'
-        })
-        
-    except Subscription.DoesNotExist:
-        return JsonResponse({'error': 'Subscription not found'}, status=404)
-    except Exception as e:
-        return JsonResponse({'error': str(e)}, status=500)
-
-
-@login_required(login_url='superadmin:superadmin_login')
-def payment_create(request):
-    """Create a new payment record"""
-    if not is_admin_or_superadmin(request.user):
-        return redirect('superadmin:superadmin_login')
-    
-    if request.method != 'POST':
-        return JsonResponse({'error': 'Only POST method allowed'}, status=405)
-    
-    try:
-        from .models import Payment, Company
-        from django.utils import timezone
-        import uuid
-        
-        # Get form data
-        company_id = request.POST.get('company')
-        amount = request.POST.get('amount')
-        payment_date = request.POST.get('payment_date')
-        payment_method = request.POST.get('payment_method')
-        payment_type = request.POST.get('payment_type')
-        notes = request.POST.get('notes', '')
-        end_trial = request.POST.get('end_trial') == 'true'  # New field to control trial behavior
-        
-        # Validate required fields
-        if not all([company_id, amount, payment_date, payment_method, payment_type]):
-            return JsonResponse({'error': 'All required fields must be filled'}, status=400)
-        
-        # Get company
-        company = get_object_or_404(Company, id=company_id)
-        
-        # Parse payment date
-        from datetime import datetime
-        try:
-            payment_date_obj = datetime.strptime(payment_date, '%Y-%m-%d')
-        except ValueError:
-            return JsonResponse({'error': 'Invalid payment date format'}, status=400)
-        
-        # Create payment
-        payment = Payment.objects.create(
-            company=company,
-            amount=amount,
-            payment_method=payment_method,
-            payment_type=payment_type,
-            payment_date=payment_date_obj,
-            status='completed',  # Auto-complete manual payments
-            transaction_id=f'MANUAL-{uuid.uuid4().hex[:8].upper()}',
-            invoice_number=f'INV-{timezone.now().strftime("%Y%m%d")}-{uuid.uuid4().hex[:6].upper()}',
-            notes=notes
-        )
-        
-        # Check if company has an active subscription and update it
-        try:
-            from .models import Subscription
-            subscription = Subscription.objects.filter(
-                company=company,
-                status__in=['trial', 'active']  # Check both trial and active
-            ).first()
-            
-            if subscription:
-                # Link the payment to this subscription
-                payment.subscription = subscription
-                payment.save()
-                
-                if subscription.status == 'trial':
-                    if end_trial:
-                        # End trial and activate subscription
-                        # Set base_price from plan
-                        subscription.base_price = subscription.plan.price
-                        subscription.total_amount = float(amount)
-                        subscription.status = 'active'  # Move to Active status
-                        subscription.save()
-                        
-                        return JsonResponse({
-                            'success': True,
-                            'message': 'Payment recorded successfully. Trial subscription moved to Active status.',
-                            'payment_id': payment.id,
-                            'transaction_id': payment.transaction_id,
-                            'subscription_updated': True,
-                            'subscription_status': 'active',
-                            'trial_ended': True
-                        })
-                    else:
-                        # Keep trial status, just record payment
-                        return JsonResponse({
-                            'success': True,
-                            'message': 'Payment recorded successfully. Trial subscription remains active.',
-                            'payment_id': payment.id,
-                            'transaction_id': payment.transaction_id,
-                            'subscription_updated': False,
-                            'subscription_status': 'trial',
-                            'trial_ended': False
-                        })
-                elif subscription.status == 'active':
-                    # Update active subscription with new payment amount
-                    from decimal import Decimal
-                    current_total = Decimal(str(subscription.total_amount)) if subscription.total_amount else Decimal('0.00')
-                    new_payment = Decimal(str(amount))
-                    subscription.total_amount = current_total + new_payment
-                    subscription.save()
-                    
-                    # Verify the update was successful
-                    subscription.refresh_from_db()  # Get latest data from database
-                    print(f"DEBUG: Updated active subscription {subscription.id} - Previous: {current_total}, Payment: {new_payment}, New Total: {subscription.total_amount}")
-                    print(f"DEBUG: Verification - Database total: {subscription.total_amount}, Expected: {current_total + new_payment}")
-                    
-                    return JsonResponse({
-                        'success': True,
-                        'message': 'Payment recorded successfully. Active subscription updated.',
-                        'payment_id': payment.id,
-                        'transaction_id': payment.transaction_id,
-                        'subscription_updated': True,
-                        'subscription_status': 'active',
-                        'new_total': str(subscription.total_amount),
-                        'verified_total': str(subscription.total_amount)
-                    })
-        except Exception as e:
-            # Log error but don't fail the payment creation
-            print(f"Warning: Could not update trial subscription: {e}")
-        
-        return JsonResponse({
-            'success': True,
-            'message': 'Payment recorded successfully',
-            'payment_id': payment.id,
-            'transaction_id': payment.transaction_id
-        })
-        
-    except Exception as e:
-        return JsonResponse({'error': str(e)}, status=500)
-
-
-@login_required(login_url='superadmin:superadmin_login')
-def check_trial_status(request, company_id):
-    """API endpoint to check if company has trial subscription"""
-    if not is_admin_or_superadmin(request.user):
-        return JsonResponse({'error': 'Unauthorized'}, status=401)
-    
-    try:
-        from .models import Subscription
-        trial_subscription = Subscription.objects.filter(
-            company_id=company_id,
-            status='trial'
-        ).first()
-        
-        return JsonResponse({
-            'has_trial': trial_subscription is not None,
-            'subscription_id': trial_subscription.id if trial_subscription else None
-        })
-    except Exception as e:
-        return JsonResponse({'error': str(e)}, status=500)
-
-
-@login_required(login_url='superadmin:superadmin_login')
 def subscription_change_plan(request, subscription_id):
     """Handle subscription upgrade/downgrade"""
     if not is_admin_or_superadmin(request.user):
@@ -1921,16 +1787,13 @@ def subscription_change_plan(request, subscription_id):
         # Get subscription
         subscription = get_object_or_404(Subscription, id=subscription_id)
         
-        # Check if subscription is in trial period
+        # Allow plan changes during trial period - users can upgrade anytime!
+        # This enables users to convert to paid plans during their 7-day trial
         if subscription.status == 'trial':
             from django.utils import timezone
             if subscription.trial_end_date and timezone.now() < subscription.trial_end_date:
-                return JsonResponse({
-                    'error': 'Cannot change plan during trial period.',
-                    'trial_active': True,
-                    'trial_end_date': subscription.trial_end_date.strftime('%Y-%m-%d'),
-                    'message': 'Please wait for the trial period to end before changing plans.'
-                }, status=400)
+                # User is in trial period - allow upgrade to paid plans
+                pass  # Continue with plan change process
         
         # Get form data
         new_plan_code = request.POST.get('new_plan')
@@ -2007,113 +1870,8 @@ def subscription_change_plan(request, subscription_id):
             'success': True,
             'message': f'Successfully changed plan to {new_plan.name}',
             'new_plan': new_plan.name,
-            'new_amount': f'₹{new_amount:.2f}',
+            'new_amount': f'${new_amount:.2f}',
             'new_billing_cycle': new_billing_cycle
-        })
-        
-    except Exception as e:
-        return JsonResponse({'error': str(e)}, status=500)
-
-
-@login_required(login_url='superadmin:superadmin_login')
-def subscription_renew(request, subscription_id):
-    """Handle subscription renewal"""
-    if not is_admin_or_superadmin(request.user):
-        return redirect('superadmin:superadmin_login')
-    
-    if request.method != 'POST':
-        return JsonResponse({'error': 'Only POST method allowed'}, status=405)
-    
-    try:
-        from .models import Subscription, Payment
-        from django.utils import timezone
-        from datetime import datetime, timedelta
-        import uuid
-        
-        # Get subscription
-        subscription = get_object_or_404(Subscription, id=subscription_id)
-        
-        # Check if subscription is in trial period
-        if subscription.status == 'trial':
-            from django.utils import timezone
-            if subscription.trial_end_date and timezone.now() < subscription.trial_end_date:
-                return JsonResponse({
-                    'error': 'Cannot renew trial subscription. Trial period is still active.',
-                    'trial_active': True,
-                    'trial_end_date': subscription.trial_end_date.strftime('%Y-%m-%d'),
-                    'message': 'Please wait for the trial period to end before renewing.'
-                }, status=400)
-        
-        # Get form data
-        billing_cycle = request.POST.get('billing_cycle')
-        renewal_date_str = request.POST.get('renewal_date')
-        payment_method = request.POST.get('payment_method')
-        
-        # Validate required fields
-        if not all([billing_cycle, renewal_date_str, payment_method]):
-            return JsonResponse({'error': 'All required fields must be filled'}, status=400)
-        
-        # Parse renewal date
-        try:
-            renewal_date = datetime.strptime(renewal_date_str, '%Y-%m-%d').date()
-        except ValueError:
-            return JsonResponse({'error': 'Invalid renewal date format'}, status=400)
-        
-        # Calculate new billing date based on cycle
-        if billing_cycle == 'monthly':
-            new_billing_date = renewal_date + timedelta(days=30)
-            months = 1
-        elif billing_cycle == 'quarterly':
-            new_billing_date = renewal_date + timedelta(days=90)
-            months = 3
-        elif billing_cycle == 'yearly':
-            new_billing_date = renewal_date + timedelta(days=365)
-            months = 12
-        else:
-            return JsonResponse({'error': 'Invalid billing cycle'}, status=400)
-        
-        # Calculate renewal amount based on current plan
-        base_price = subscription.plan.price
-        if billing_cycle == 'monthly':
-            renewal_amount = base_price * 1
-        elif billing_cycle == 'quarterly':
-            renewal_amount = base_price * 3
-        elif billing_cycle == 'yearly':
-            renewal_amount = base_price * 12
-        else:
-            renewal_amount = base_price
-        
-        # Store old values
-        old_billing_date = subscription.next_billing_date
-        old_amount = subscription.total_amount
-        
-        # Update subscription
-        subscription.billing_cycle = billing_cycle
-        subscription.next_billing_date = new_billing_date
-        subscription.total_amount = renewal_amount
-        subscription.status = 'active'  # Ensure subscription is active
-        subscription.save()
-        
-        # Create payment record for renewal
-        Payment.objects.create(
-            company=subscription.company,
-            subscription=subscription,
-            amount=renewal_amount,
-            payment_method=payment_method,
-            payment_type='subscription',
-            status='completed',
-            payment_date=timezone.now(),
-            transaction_id=f'RENEWAL-{uuid.uuid4().hex[:8].upper()}',
-            invoice_number=f'REN-{timezone.now().strftime("%Y%m%d")}-{uuid.uuid4().hex[:6].upper()}',
-            notes=f'Subscription renewed for {months} month(s) from {renewal_date} to {new_billing_date}'
-        )
-        
-        return JsonResponse({
-            'success': True,
-            'message': f'Subscription successfully renewed for {months} month(s)',
-            'new_billing_date': new_billing_date.strftime('%b %d, %Y'),
-            'months': months,
-            'amount': f'₹{renewal_amount:.2f}'
         })
         
     except Exception as e:
@@ -2792,13 +2550,172 @@ def superadmin_login(request):
     return render(request, 'superadmin/login.html')
 
 
+def superadmin_forgot_password(request):
+    """Handle forgot password request for superadmin"""
+    if request.method == 'POST':
+        email = request.POST.get('email', '').strip()
+        
+        if not email:
+            messages.error(request, 'Email address is required')
+            return render(request, 'superadmin/forgot_password.html')
+        
+        # Check if email exists and belongs to a superadmin
+        from django.contrib.auth.models import User as DjangoUser
+        from users.models import UserProfile
+        
+        user = DjangoUser.objects.filter(email=email).first()
+        
+        if user:
+            if _is_superadmin_user(user):
+                # Generate 6-digit verification code
+                import random
+                verification_code = f"{random.randint(100000, 999999)}"
+                
+                # Store code in session (valid for 15 minutes)
+                request.session[f'reset_code_{email}'] = {
+                    'code': verification_code,
+                    'timestamp': str(timezone.now().timestamp()),
+                    'email': email
+                }
+                request.session.modified = True
+                
+                # Send email with verification code
+                try:
+                    from django.core.mail import send_mail
+                    from django.conf import settings
+                    
+                    subject = 'SuperAdmin Password Reset Code - TicketHub'
+                    message = f'''
+Hello SuperAdmin,
+
+You requested to reset your password for TicketHub.
+
+Your verification code is: {verification_code}
+
+This code will expire in 15 minutes.
+
+If you didn't request this password reset, please ignore this email.
+
+Best regards,
+TicketHub Team
+                    '''
+                    
+                    send_mail(
+                        subject,
+                        message,
+                        settings.DEFAULT_FROM_EMAIL,
+                        [email],
+                        fail_silently=False,
+                    )
+                    
+                    messages.success(request, f'Verification code sent to {email}. Please check your email.')
+                    return redirect(f'/superadmin/reset-password/?email={email}')
+                    
+                except Exception as e:
+                    print(f"Error sending email: {e}")
+                    messages.error(request, 'Failed to send verification code. Please try again.')
+            else:
+                # User exists but is not a superadmin
+                messages.error(request, 'Your email is not registered as a SuperAdmin')
+                return render(request, 'superadmin/forgot_password.html')
+        else:
+            # Show specific message if email is not registered
+            messages.error(request, 'Your email is not registered')
+            return render(request, 'superadmin/forgot_password.html')
+    
+    return render(request, 'superadmin/forgot_password.html')
 
 
-
-
-
-
-
+def superadmin_reset_password(request):
+    """Handle password reset with verification code"""
+    # Get email from POST, GET, or session
+    email = request.POST.get('email') or request.GET.get('email')
+    
+    # If no email in POST/GET, try to get it from session
+    if not email:
+        # Find any reset code in session to get the email
+        for key, value in request.session.items():
+            if key.startswith('reset_code_') and isinstance(value, dict):
+                email = value.get('email')
+                break
+    
+    if not email:
+        messages.error(request, 'Email is required. Please start the forgot password process again.')
+        return redirect('superadmin:forgot_password')
+    
+    if request.method == 'POST':
+        # Get verification code from form inputs
+        code = ''.join([
+            request.POST.get('code1', ''),
+            request.POST.get('code2', ''),
+            request.POST.get('code3', ''),
+            request.POST.get('code4', ''),
+            request.POST.get('code5', ''),
+            request.POST.get('code6', '')
+        ])
+        
+        new_password = request.POST.get('new_password', '')
+        confirm_password = request.POST.get('confirm_password', '')
+        
+        # Validate inputs
+        if len(code) != 6:
+            messages.error(request, 'Invalid verification code')
+            return render(request, 'superadmin/reset_password.html', {'email': email})
+        
+        if new_password != confirm_password:
+            messages.error(request, 'Passwords do not match')
+            return render(request, 'superadmin/reset_password.html', {'email': email})
+        
+        if len(new_password) < 8:
+            messages.error(request, 'Password must be at least 8 characters long')
+            return render(request, 'superadmin/reset_password.html', {'email': email})
+        
+        # Check verification code
+        session_data = request.session.get(f'reset_code_{email}')
+        
+        if not session_data:
+            messages.error(request, 'Verification code expired or invalid. Please request a new one.')
+            return redirect('superadmin:forgot_password')
+        
+        # Check if code is valid (15 minutes expiry)
+        import time
+        timestamp = float(session_data['timestamp'])
+        current_time = timezone.now().timestamp()
+        
+        if current_time - timestamp > 900:  # 15 minutes = 900 seconds
+            del request.session[f'reset_code_{email}']
+            request.session.modified = True
+            messages.error(request, 'Verification code expired. Please request a new one.')
+            return redirect('superadmin:forgot_password')
+        
+        if session_data['code'] != code:
+            messages.error(request, 'Invalid verification code')
+            return render(request, 'superadmin/reset_password.html', {'email': email})
+        
+        # Code is valid, reset password
+        try:
+            from django.contrib.auth.models import User as DjangoUser
+            
+            user = DjangoUser.objects.get(email=email)
+            user.set_password(new_password)
+            user.save()
+            
+            # Clear the session data
+            del request.session[f'reset_code_{email}']
+            request.session.modified = True
+            
+            messages.success(request, 'Password reset successfully! Please login with your new password.')
+            return redirect('superadmin:superadmin_login')
+            
+        except DjangoUser.DoesNotExist:
+            messages.error(request, 'User not found')
+            return redirect('superadmin:forgot_password')
+        except Exception as e:
+            print(f"Error resetting password: {e}")
+            messages.error(request, 'Failed to reset password. Please try again.')
+            return render(request, 'superadmin/reset_password.html', {'email': email})
+    
+    return render(request, 'superadmin/reset_password.html', {'email': email})
 
 
 def admin_login(request):
@@ -3615,7 +3532,7 @@ def superadmin_dashboard(request):
 
 
 
-
+    
 
 
 
@@ -3728,42 +3645,30 @@ def superadmin_dashboard(request):
 
 
     
-
-
-
     # Last 30 days data
-
-
 
     for i in range(30):
 
+        date = timezone.now() - timedelta(days=i)
 
+        start_date = date.replace(hour=0, minute=0, second=0, microsecond=0)
 
-        date = datetime.now() - timedelta(days=i)
-
-
+        end_date = start_date + timedelta(days=1)
 
         day_tickets = Ticket.objects.filter(
 
+            created_at__gte=start_date,
 
-
-            created_at__date=date.date()
-
-
+            created_at__lt=end_date
 
         ).count()
 
-
-
         tickets_chart_data.insert(0, float(day_tickets))
-
-
 
         tickets_chart_labels.insert(0, date.strftime('%m/%d'))
 
 
 
-    
 
 
 
@@ -3775,7 +3680,15 @@ def superadmin_dashboard(request):
 
 
 
-        date = datetime.now() - timedelta(days=i)
+        date = timezone.now() - timedelta(days=i)
+
+
+
+        start_date = date.replace(hour=0, minute=0, second=0, microsecond=0)
+
+
+
+        end_date = start_date + timedelta(days=1)
 
 
 
@@ -3783,7 +3696,11 @@ def superadmin_dashboard(request):
 
 
 
-            created_at__date=date.date()
+            created_at__gte=start_date,
+
+
+
+            created_at__lt=end_date
 
 
 
@@ -3811,7 +3728,7 @@ def superadmin_dashboard(request):
 
 
 
-        month_date = datetime.now() - timedelta(days=30*i)
+        month_date = timezone.now() - timedelta(days=30*i)
 
 
 
@@ -4086,6 +4003,16 @@ def user_edit(request, user_id):
     if not is_admin_or_superadmin(request.user):
         return redirect('superadmin:superadmin_login')
     
+    # Store the referring page in session when first accessing the edit page
+    if request.method == 'GET':
+        referer = request.META.get('HTTP_REFERER', '')
+        if 'admin-management' in referer:
+            request.session['edit_user_redirect'] = 'admin-management'
+        elif 'users' in referer:
+            request.session['edit_user_redirect'] = 'users'
+        else:
+            request.session['edit_user_redirect'] = 'users'  # default
+    
     # Import models at the top to avoid import issues
     try:
         from users.models import Role, UserProfile
@@ -4160,11 +4087,18 @@ def user_edit(request, user_id):
                 return redirect('superadmin:user_edit', user_id=user_id)
             
             messages.success(request, f'User "{username}" updated successfully.')
-            return redirect('superadmin:users_list')
+            
+            # Use session to determine where to redirect
+            redirect_target = request.session.get('edit_user_redirect', 'users')
+            if redirect_target == 'admin-management':
+                return redirect('superadmin:admin_management')
+            else:
+                return redirect('superadmin:users_list')
         
         context = {
             'user': user,
-            'sa_page': 'users'
+            'sa_page': 'users',
+            'from_admin_management': request.session.get('edit_user_redirect') == 'admin-management'
         }
         return render(request, 'superadmin/user_edit.html', context)
     except User.DoesNotExist:
@@ -4207,10 +4141,8 @@ def toggle_user_status(request, user_id):
 @login_required(login_url='superadmin:superadmin_login')
 def superadmin_profile(request):
     """Superadmin profile page with dynamic statistics"""
-    print(f"DEBUG: superadmin_profile view called for user: {request.user}")
     
     if not is_admin_or_superadmin(request.user):
-        print(f"DEBUG: User not authorized, redirecting to login")
         return redirect('superadmin:superadmin_login')
     
     try:
@@ -4222,28 +4154,25 @@ def superadmin_profile(request):
         
         # Count tickets
         total_tickets = Ticket.objects.count()
-        print(f"DEBUG: Total tickets count: {total_tickets}")
         
-        # Count companies  
-        total_companies = Company.objects.count()
-        print(f"DEBUG: Total companies count: {total_companies}")
+        # Count companies (only active ones to match dashboard)
+        total_companies = Company.objects.filter(is_active=True).count()
         
-        # Count users by role
+        # Count users by role (only active ones to match dashboard)
         total_users = User.objects.filter(
-            userprofile__role__name='User'
+            userprofile__role__name='User',
+            is_active=True
         ).count()
-        print(f"DEBUG: Total users count: {total_users}")
         
-        # Get additional statistics
+        # Get additional statistics (only active users for consistency)
         total_agents = User.objects.filter(
-            userprofile__role__name='Agent'
+            userprofile__role__name='Agent',
+            is_active=True
         ).count()
-        print(f"DEBUG: Total agents count: {total_agents}")
         
         total_admins = User.objects.filter(
-            Q(userprofile__role__name='Admin') | Q(is_superuser=True)
+            Q(userprofile__role__name='Admin', is_active=True) | Q(is_superuser=True, is_active=True)
         ).distinct().count()
-        print(f"DEBUG: Total admins count: {total_admins}")
         
         # Get or create profile settings for the current user
         profile_settings, created = SuperAdminSettings.objects.get_or_create(
@@ -4269,13 +4198,9 @@ def superadmin_profile(request):
             'sa_page': 'profile'
         }
         
-        print(f"DEBUG: Context prepared: {context}")
         return render(request, 'superadmin/profile.html', context)
         
     except Exception as e:
-        print(f"ERROR: Error loading profile data: {str(e)}")
-        import traceback
-        traceback.print_exc()
         
         # Fallback to default values if there's an error
         from .models import SuperAdminSettings
@@ -5236,59 +5161,22 @@ def superadmin_signup(request):
 
 
             if sub_created:
-
-
-
                 print(f'Trial subscription created for SuperAdmin {username} with Basic plan')
 
-
-
             
-
-
-
         except Exception as e:
-
-
-
             print(f'Error creating trial subscription for SuperAdmin: {e}')
 
-
-
-
-
-
-
         messages.success(request, 'Super Admin account created. You can now log in.')
-
-
-
         return redirect('superadmin:superadmin_login')
-
-
-
-
-
-
 
     return render(request, 'superadmin/signup.html')
 
 
-
-
-
-
-
-
-
-
-
 @login_required(login_url='superadmin:superadmin_login')
-
-
-
 def superadmin_page(request, page: str):
 
+# ... (rest of the code remains the same)
 
 
     print(f'[DEBUG] superadmin_page called with method={request.method}, page={page}')
@@ -5344,7 +5232,6 @@ def superadmin_page(request, page: str):
                 user_settings.department = request.POST.get('department', '')
                 user_settings.role = request.POST.get('role', '')
                 user_settings.employee_id = request.POST.get('employee_id', '')
-                user_settings.skills = request.POST.get('skills', '')
                 
                 # Notification settings
                 user_settings.email_notifications = request.POST.get('email_notifications') == 'on'
@@ -5769,6 +5656,21 @@ def superadmin_page(request, page: str):
             'user_profile': profile
         }
         return render(request, 'superadmin/tickets.html', context)
+    
+    # Handle notifications page
+    elif page_normalized == 'notifications':
+        # Get notifications context
+        notifications_context = get_notifications_context(request.user)
+        
+        # Add user profile to context
+        user = request.user
+        profile = getattr(user, 'userprofile', None)
+        context = {
+            'sa_page': 'notifications',
+            'user_profile': profile,
+            **notifications_context  # Add notifications context
+        }
+        return render(request, 'superadmin/notifications.html', context)
     
     # Default case - return 404 or redirect
     else:

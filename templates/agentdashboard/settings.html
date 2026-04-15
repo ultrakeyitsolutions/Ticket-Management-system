@@ -113,6 +113,12 @@
                                 <form method="post" id="agent-settings-form">
 
                                     {% csrf_token %}
+                                    
+                                    <!-- Hidden fields for settings that don't have visible inputs -->
+                                    <input type="hidden" name="primary_color" value="{{ agent_settings.primary_color }}">
+                                    <input type="hidden" name="fixed_header" value="{% if agent_settings.fixed_header %}on{% endif %}">
+                                    <input type="hidden" name="fixed_sidebar" value="{% if agent_settings.fixed_sidebar %}on{% endif %}">
+                                    <input type="hidden" name="collapsed_sidebar" value="{% if agent_settings.collapsed_sidebar %}on{% endif %}">
 
                                     <div class="tab-content">
 
@@ -500,7 +506,7 @@
 
                                                                         <input class="form-check-input" type="radio"
 
-                                                                            name="theme" id="lightTheme" checked>
+                                                                            name="theme" id="lightTheme" value="light" {% if agent_settings.theme == "light" or not agent_settings.theme %}checked{% endif %}>
 
                                                                         <label class="form-check-label"
 
@@ -516,7 +522,7 @@
 
                                                                         <input class="form-check-input" type="radio"
 
-                                                                            name="theme" id="darkTheme">
+                                                                            name="theme" id="darkTheme" value="dark" {% if agent_settings.theme == "dark" %}checked{% endif %}>
 
                                                                         <label class="form-check-label" for="darkTheme">
 
@@ -530,7 +536,7 @@
 
                                                                         <input class="form-check-input" type="radio"
 
-                                                                            name="theme" id="systemTheme">
+                                                                            name="theme" id="systemTheme" value="system" {% if agent_settings.theme == "system" %}checked{% endif %}>
 
                                                                         <label class="form-check-label"
 

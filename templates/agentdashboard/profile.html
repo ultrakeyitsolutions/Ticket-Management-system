@@ -346,6 +346,8 @@
 
                                                 <input type="hidden" name="action" value="profile">
 
+                                                <input type="hidden" name="username" value="{{ request.user.username }}" autocomplete="username">
+
                                                 <div class="col-12 col-md-6">
 
                                                     <label class="form-label" for="fullName">Full Name</label>
@@ -460,6 +462,8 @@
 
                                                 <input type="hidden" name="action" value="password">
 
+                                                <input type="hidden" name="username" value="{{ request.user.username }}" autocomplete="username">
+
                                                 <div class="col-12 col-md-6">
 
                                                     <label class="form-label" for="password">New Password</label>
@@ -516,6 +520,8 @@
                                                 {% csrf_token %}
 
                                                 <input type="hidden" name="action" value="notifications">
+
+                                                <input type="hidden" name="username" value="{{ request.user.username }}" autocomplete="username">
 
                                                 <div class="col-12">
 
@@ -957,76 +963,40 @@
 
 
 
-        // Message functionality
+        // Message functionality - simplified version
 
         function openMessageModal() {
-
-            // Create a simple message modal for demo
-
-            const modalHtml = `
-
-                <div class="modal fade show" id="messageModal" style="display: flex; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
-
-                    <div class="modal-content" style="background: white; padding: 2rem; border-radius: 8px; max-width: 500px; width: 90%;">
-
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-
-                            <h5 class="mb-0">Send Message</h5>
-
-                            <button type="button" class="btn-close" onclick="closeMessageModal()">&times;</button>
-
-                        </div>
-
-                        <div class="mb-3">
-
-                            <label class="form-label">Recipient</label>
-
-                            <select class="form-control mb-2" id="messageRecipient">
-
-                                <option value="">Select a user...</option>
-
-                                <option value="admin">Admin</option>
-
-                                <option value="user">Customer</option>
-
-                                <option value="agent">Other Agent</option>
-
-                            </select>
-
-                        </div>
-
-                        <div class="mb-3">
-
-                            <label class="form-label">Message</label>
-
-                            <textarea class="form-control" id="messageContent" rows="4" placeholder="Type your message here..."></textarea>
-
-                        </div>
-
-                        <div class="d-flex gap-2">
-
-                            <button type="button" class="btn btn-primary" onclick="sendMessage()">Send Message</button>
-
-                            <button type="button" class="btn btn-secondary" onclick="closeMessageModal()">Cancel</button>
-
-                        </div>
-
-                    </div>
-
-                </div>
-
-            `;
-
+            // Simple modal creation without complex token handling
+            const modalHtml = '<div class="modal fade show" id="messageModal" style="display: flex; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">' +
+                '<div class="modal-content" style="background: white; padding: 2rem; border-radius: 8px; max-width: 500px; width: 90%;">' +
+                    '<div class="d-flex justify-content-between align-items-center mb-3">' +
+                        '<h5 class="mb-0">Send Message</h5>' +
+                        '<button type="button" class="btn-close" onclick="closeMessageModal()">&times;</button>' +
+                    '</div>' +
+                    '<div class="mb-3">' +
+                        '<label class="form-label">Recipient</label>' +
+                        '<select class="form-control mb-2" id="messageRecipient">' +
+                            '<option value="">Select a recipient...</option>' +
+                            '<option value="admin">System Administrator</option>' +
+                            '<option value="user">Customer Support</option>' +
+                            '<option value="agent">Another Agent</option>' +
+                        '</select>' +
+                    '</div>' +
+                    '<div class="mb-3">' +
+                        '<label class="form-label">Message</label>' +
+                        '<textarea class="form-control" id="messageContent" rows="4" placeholder="Type your message here..."></textarea>' +
+                    '</div>' +
+                    '<div class="d-flex gap-2">' +
+                        '<button type="button" class="btn btn-primary" onclick="sendMessage()">Send Message</button>' +
+                        '<button type="button" class="btn btn-secondary" onclick="closeMessageModal()">Cancel</button>' +
+                    '</div>' +
+                '</div>' +
+            '</div>';
             
-
             // Add modal to page
-
             const modalDiv = document.createElement('div');
-
             modalDiv.innerHTML = modalHtml;
-
             document.body.appendChild(modalDiv);
-
         }
 
 
@@ -1046,37 +1016,70 @@
 
 
         function sendMessage() {
-
-            const recipient = document.getElementById('messageRecipient').value;
-
-            const content = document.getElementById('messageContent').value;
-
+            // Safe element retrieval
+            const recipientElement = document.getElementById('messageRecipient');
+            const contentElement = document.getElementById('messageContent');
             
-
-            if (!recipient || !content.trim()) {
-
-                alert('Please select a recipient and enter a message');
-
+            if (!recipientElement || !contentElement) {
+                alert('Message form not loaded properly. Please try again.');
                 return;
-
             }
-
             
-
-            // For demo purposes, just show success message
-
-            alert(`Message sent to ${recipient}: "${content}"`);
-
-            closeMessageModal();
-
+            const recipient = recipientElement.value || '';
+            const content = contentElement.value || '';
             
-
-            // Clear form
-
-            document.getElementById('messageRecipient').value = '';
-
-            document.getElementById('messageContent').value = '';
-
+            if (!recipient || !content.trim()) {
+                alert('Please select a recipient and enter a message');
+                return;
+            }
+            
+            // Simple CSRF token retrieval
+            let csrfToken = '';
+            try {
+                const tokenElements = document.getElementsByName('csrfmiddlewaretoken');
+                if (tokenElements && tokenElements.length > 0 && tokenElements[0].value) {
+                    csrfToken = tokenElements[0].value;
+                }
+            } catch (e) {
+                console.log('CSRF token not available');
+            }
+            
+            // Send message
+            const fetchOptions = {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    recipient: recipient,
+                    message: content
+                })
+            };
+            
+            // Add CSRF token if available
+            if (csrfToken) {
+                fetchOptions.headers['X-CSRFToken'] = csrfToken;
+            }
+            
+            fetch('/dashboard/agent-dashboard/send-message/', fetchOptions)
+            .then(function(response) {
+                return response.json();
+            })
+            .then(function(data) {
+                if (data.success) {
+                    alert('Message sent successfully!');
+                    closeMessageModal();
+                    // Clear form safely
+                    if (recipientElement) recipientElement.value = '';
+                    if (contentElement) contentElement.value = '';
+                } else {
+                    alert('Error: ' + (data.message || 'Unknown error'));
+                }
+            })
+            .catch(function(error) {
+                console.error('Error:', error);
+                alert('Network error. Please try again.');
+            });
         }
 
 
@@ -1211,33 +1214,32 @@
 
 
 
-        function closeShareModal() {
-
-            const modal = document.getElementById('shareModal');
-
-            if (modal) {
-
-                modal.remove();
-
-            }
-
-        }
-
-
-
         function shareViaEmail() {
 
             // Get the actual email from the page content
 
             const profileEmail = '{{ profile_email|default:request.user.email }}';
 
+            const profileName = '{{ profile_full_name|default:request.user.get_full_name|default:request.user.username }}';
+
             console.log('Profile email from template:', profileEmail);
 
             
 
-            const subject = encodeURIComponent(`Profile: {{ profile_full_name|default:request.user.get_full_name|default:request.user.username }}`);
+            const subject = encodeURIComponent(`Profile: ${profileName}`);
 
-            const body = encodeURIComponent(`Check out my profile: ${window.location.href}`);
+            const body = encodeURIComponent(`Check out my profile: ${window.location.href}
+
+Profile Details:
+Name: ${profileName}
+Role: {{ profile_role|default:"Agent" }}
+Email: ${profileEmail}
+Phone: {{ profile_phone|default:"Not set" }}
+Department: {{ profile_obj.department|default:"Not set" }}
+Tickets Closed: {{ profile_tickets_closed|default:0 }}
+Average Rating: {{ profile_avg_rating_display|default:"0.0/5" }}
+
+View full profile at: ${window.location.href}`);
 
             
 
@@ -1245,66 +1247,40 @@
 
         }
 
-
-
-        function shareViaLink() {
-
-            const profileUrl = window.location.href;
-
-            
-
-            // Copy to clipboard
-
-            if (navigator.clipboard) {
-
-                navigator.clipboard.writeText(profileUrl).then(() => {
-
-                    alert('Profile link copied to clipboard!');
-
-                }).catch(err => {
-
-                    console.error('Failed to copy: ', err);
-
-                    // Fallback: select text
-
-                    const textArea = document.createElement('textarea');
-
-                    textArea.value = profileUrl;
-
-                    document.body.appendChild(textArea);
-
-                    textArea.select();
-
-                    document.execCommand('copy');
-
-                    document.body.removeChild(textArea);
-
-                    alert('Profile link copied to clipboard!');
-
-                });
-
-            } else {
-
-                // Fallback for older browsers
-
-                const textArea = document.createElement('textarea');
-
-                textArea.value = profileUrl;
-
-                document.body.appendChild(textArea);
-
-                textArea.select();
-
-                document.execCommand('copy');
-
-                document.body.removeChild(textArea);
-
-                alert('Profile link copied to clipboard!');
-
+        function closeShareModal() {
+            const modal = document.getElementById('shareModal');
+            if (modal) {
+                modal.remove();
             }
-
         }
 
+        function shareViaLink() {
+            // Copy to clipboard
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(window.location.href).then(() => {
+                    alert('Profile link copied to clipboard!');
+                }).catch(err => {
+                    console.error('Failed to copy: ', err);
+                    // Fallback: select text
+                    const textArea = document.createElement('textarea');
+                    textArea.value = window.location.href;
+                    document.body.appendChild(textArea);
+                    textArea.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(textArea);
+                    alert('Profile link copied to clipboard!');
+                });
+            } else {
+                // Fallback for older browsers
+                const textArea = document.createElement('textarea');
+                textArea.value = window.location.href;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                alert('Profile link copied to clipboard!');
+            }
+        }
     </script>
 
 

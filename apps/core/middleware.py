@@ -94,6 +94,7 @@ class PaymentMiddleware:
             '/static/',
             '/media/',
             '/payment/',
+            '/superadmin/',
         ]
         
         # Check if path starts with any skip path

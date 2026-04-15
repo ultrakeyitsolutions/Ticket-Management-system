@@ -33,7 +33,7 @@
                             <h2>Reports & Analytics</h2>
                         </div>
                         <div class="d-flex">
-                            <button class="btn btn-outline-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.875rem;">
+                            <button class="btn btn-outline-secondary" id="main-export-btn" style="padding: 0.25rem 0.5rem; font-size: 0.875rem;">
                                 <i class="bi bi-download"></i> Export
                             </button>
                         </div>
@@ -218,10 +218,10 @@
                                                             </div>
                                                         </div>
                                                     </td>
-                                                    <td>-</td>
+                                                    <td>{{ a.department|default:"General" }}</td>
                                                     <td>
                                                         <div class="d-flex align-items-center">
-                                                            <span class="me-2">{{ a.avg_rating }}</span>
+                                                            <span class="me-2">{{ a.avg_rating|default:"0.0" }}</span>
                                                             <div class="rating-stars" style="font-size: 0.9rem;">
                                                                 {% for i in "12345" %}
                                                                     {% if forloop.counter <= a.avg_rating|floatformat:0 %}
@@ -233,10 +233,18 @@
                                                             </div>
                                                         </div>
                                                     </td>
-                                                    <td>-</td>
-                                                    <td>{{ a.rating_count }}</td>
-                                                    <td>-</td>
-                                                    <td>-</td>
+                                                    <td>{{ a.response_time|default:"0h 0m" }}</td>
+                                                    <td>{{ a.resolved_count|default:"0" }}</td>
+                                                    <td>{{ a.satisfaction_rate|default:"0" }}%</td>
+                                                    <td>
+                                                        {% if a.trend == "up" %}
+                                                            <i class="bi bi-arrow-up-circle-fill text-success"></i>
+                                                        {% elif a.trend == "down" %}
+                                                            <i class="bi bi-arrow-down-circle-fill text-danger"></i>
+                                                        {% else %}
+                                                            <i class="bi bi-dash-circle-fill text-warning"></i>
+                                                        {% endif %}
+                                                    </td>
                                                 </tr>
                                             {% endfor %}
                                         {% else %}
@@ -452,20 +460,7 @@
             });
         }
 
-        // Export visible Agent Performance rows as CSV, including selected date range and period
-        function exportAgentPerformance() {
-            const dateRangeSelect = document.getElementById('date-range');
-            const dateRange = dateRangeSelect ? (dateRangeSelect.value || '') : '';
-
-            const params = new URLSearchParams();
-            params.set('report_type', 'agent_performance');
-            if (dateRange) {
-                params.set('date_range', dateRange);
-            }
-
-            window.location.href = '{% url "dashboards:admin_reports_export" "csv" %}' + '?' + params.toString();
-        }
-
+        
         // Global variables for ticket volume chart
         let ticketVolumeChart = null;
         let currentPeriod = 'daily'; // Default period
@@ -936,16 +931,24 @@
                 agentSearchInput.addEventListener('input', applyAgentPerformanceFilters);
             }
 
-            // Wire up top-level Export button to export Agent Performance table
-            const pageHeader = document.querySelector('.page-header');
-            if (pageHeader) {
-                const exportBtn = pageHeader.querySelector('button.btn.btn-outline-secondary');
-                if (exportBtn) {
-                    exportBtn.addEventListener('click', function(e) {
-                        e.preventDefault();
-                        exportAgentPerformance();
-                    });
-                }
+            // Wire up top-level Export button to export ticket summary
+            const mainExportBtn = document.getElementById('main-export-btn');
+            if (mainExportBtn) {
+                mainExportBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    // Directly export ticket summary as CSV
+                    const dateRangeSelect = document.getElementById('date-range');
+                    const dateRange = dateRangeSelect ? (dateRangeSelect.value || '') : '';
+
+                    const params = new URLSearchParams();
+                    params.set('report_type', 'ticket_summary');
+                    if (dateRange) {
+                        params.set('date_range', dateRange);
+                    }
+
+                    const exportUrl = '/dashboard/admin-dashboard/reports/export/csv/?' + params.toString();
+                    window.location.href = exportUrl;
+                });
             }
 
             // Make Day/Week/Month buttons toggle active state (used in export metadata)
@@ -1023,7 +1026,7 @@
                     params.set('date_range', pageDateRange);
                 }
 
-                return '{% url "dashboards:admin_reports_export" "__fmt__" %}'.replace('__fmt__', exportFormat) + '?' + params.toString();
+                return `/dashboard/admin-dashboard/reports/export/${exportFormat}/?` + params.toString();
             }
 
             const ticketCsvBtn = document.getElementById('export-ticket-csv');

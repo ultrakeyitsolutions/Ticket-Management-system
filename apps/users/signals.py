@@ -27,11 +27,11 @@ def create_user_profile(sender, instance, created, **kwargs):
 @receiver(post_save, sender=Company)
 def create_trial_subscription(sender, instance, created, **kwargs):
     """
-    Automatically create a free trial subscription for new companies
+    Automatically create a free trial subscription for new companies only if status is trial
     """
     from django.conf import settings
     
-    if created and getattr(settings, 'FREE_TRIAL_AUTO_ASSIGN', True):
+    if created and getattr(settings, 'FREE_TRIAL_AUTO_ASSIGN', True) and instance.subscription_status == 'trial':
         # Get the default/free plan from settings
         plan_name = getattr(settings, 'FREE_TRIAL_PLAN_NAME', 'Basic')
         default_plan = Plan.objects.filter(name__icontains=plan_name).first()
@@ -62,9 +62,12 @@ def create_trial_subscription(sender, instance, created, **kwargs):
                 auto_renew=False  # Don't auto-renew from trial
             )
             
-            # Update company subscription status
-            instance.subscription_status = 'trial'
-            instance.plan = default_plan
+            # Update company subscription status only if not already set
+            if not instance.subscription_status or instance.subscription_status == 'trial':
+                instance.subscription_status = 'trial'
+            # Only set plan if not already set
+            if not instance.plan:
+                instance.plan = default_plan
             instance.plan_expiry_date = trial_end
             instance.subscription_start_date = trial_start
             instance.save()

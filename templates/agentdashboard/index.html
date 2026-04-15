@@ -1006,27 +1006,31 @@
 
                                                 <tr>
 
-                                                    <td>#{{ t.ticket.ticket_id }} {{ t.ticket.title }}</td>
+                                                    <td>#{{ t.ticket_id }} {{ t.title }}</td>
 
                                                     <td>
 
                                                         <span class="badge
 
-                                                            {% if t.ticket.priority == 'High' %} bg-danger
+                                                            {% if t.priority == 'High' %} bg-danger
 
-                                                            {% elif t.ticket.priority == 'Medium' %} bg-warning
+                                                            {% elif t.priority == 'Medium' %} bg-warning
 
-                                                            {% elif t.ticket.priority == 'Low' %} bg-info
+                                                            {% elif t.priority == 'Low' %} bg-info
 
                                                             {% else %} bg-secondary{% endif %}">
 
-                                                            {{ t.ticket.priority }}
+                                                            {{ t.priority }}
 
                                                         </span>
 
                                                     </td>
 
-                                                    <td><span class="{{ t.status_class }}">{{ t.time_display }}</span></td>
+                                                    <td>
+                                                        {% with time_since=t.created_at|timesince %}
+                                                            <span class="text-warning">{{ time_since }} ago</span>
+                                                        {% endwith %}
+                                                    </td>
 
                                                 </tr>
 

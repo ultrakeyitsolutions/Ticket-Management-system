@@ -242,7 +242,11 @@ setTimeout(() => {
     const allModals = document.querySelectorAll('[id*="Modal"]');
     console.log('All modals found:', allModals.length);
     allModals.forEach((modal, index) => {
-        console.log(`Modal ${index}:`, modal.id);
+        if (modal) {
+            console.log(`Modal ${index}:`, modal.id);
+        } else {
+            console.log(`Modal ${index}: null`);
+        }
     });
     
     // Add form submission handler for reset password

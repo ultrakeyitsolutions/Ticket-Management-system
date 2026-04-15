@@ -1,3 +1,5 @@
+
+
 """
 Signals for payments app
 """
@@ -20,6 +22,8 @@ def payment_created(sender, instance, created, **kwargs):
         if subscription:
             # Update subscription to active
             subscription.status = 'active'
+            # END TRIAL IMMEDIATELY when payment is made during trial
+            subscription.trial_end_date = None  # Clear trial end date to end trial immediately
             subscription.save()
             
             # Update company subscription status
@@ -51,6 +55,8 @@ def payment_status_changed(sender, instance, **kwargs):
                 subscription = instance.subscription
                 if subscription:
                     subscription.status = 'active'
+                    # END TRIAL IMMEDIATELY when payment is made during trial
+                    subscription.trial_end_date = None  # Clear trial end date to end trial immediately
                     subscription.save()
                     
                     company = subscription.company

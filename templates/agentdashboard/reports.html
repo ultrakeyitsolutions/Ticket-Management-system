@@ -28,10 +28,10 @@
                         <p class="text-muted">Gain insights into your support performance and metrics</p>
                     </div>
                     <div class="d-flex align-items-center gap-2">
-                        <button class="btn btn-outline-secondary" id="btn-export-csv" onclick="exportReport('csv')">
+                        <button class="btn btn-outline-secondary" onclick="exportReport('csv')">
                             <i class="bi bi-download me-1"></i> Export CSV
                         </button>
-                        <button class="btn btn-primary" id="btn-export-pdf" onclick="exportReport('pdf')">
+                        <button class="btn btn-primary" onclick="exportReport('pdf')">
                             <i class="bi bi-file-pdf me-1"></i> Export PDF
                         </button>
                     </div>
@@ -40,7 +40,7 @@
                 <!-- Filters -->
                 <div class="card mb-3">
                     <div class="card-body">
-                        <div class="row g-2">
+                        <div class="row g-2 align-items-end">
                             <div class="col-12 col-md-4">
                                 <label class="form-label small text-muted mb-1">Date range</label>
                                 <select class="form-select" id="date-range">
@@ -76,7 +76,7 @@
                                 </div>
                                 <div>
                                     <div class="text-muted small">Total Tickets</div>
-                                    <div class="fs-3 fw-bold" id="kpi-total-tickets">{{ agent_report_total_tickets }}</div>
+                                    <div class="fs-3 fw-bold" id="kpi-total-tickets">{{ agent_report_total_tickets|default:"0" }}</div>
                                 </div>
                             </div>
                         </div>
@@ -90,7 +90,7 @@
                                 </div>
                                 <div>
                                     <div class="text-muted small">Avg. Response</div>
-                                    <div class="fs-3 fw-bold" id="kpi-avg-response">{{ agent_report_avg_response_display }}</div>
+                                    <div class="fs-3 fw-bold" id="kpi-avg-response">{{ agent_report_avg_response_display|default:"0h 0m" }}</div>
                                 </div>
                             </div>
                         </div>
@@ -104,7 +104,7 @@
                                 </div>
                                 <div>
                                     <div class="text-muted small">Resolution Rate</div>
-                                    <div class="fs-3 fw-bold" id="kpi-resolution-rate">{{ agent_report_resolution_rate }}%</div>
+                                    <div class="fs-3 fw-bold" id="kpi-resolution-rate">{{ agent_report_resolution_rate|default:"0" }}%</div>
                                 </div>
                             </div>
                         </div>
@@ -118,7 +118,7 @@
                                 </div>
                                 <div>
                                     <div class="text-muted small">Customer Satisfaction</div>
-                                    <div class="fs-3 fw-bold" id="kpi-csat">{{ agent_report_csat_display }}</div>
+                                    <div class="fs-3 fw-bold" id="kpi-csat">{{ agent_report_csat_display|default:"N/A" }}</div>
                                 </div>
                             </div>
                         </div>
@@ -127,7 +127,6 @@
 
                 <!-- ===== OVERVIEW SECTION ===== -->
                 <div id="overview-section">
-
                     <div class="row g-3 mb-4">
                         <!-- Overview Line Chart -->
                         <div class="col-12 col-xl-8">
@@ -135,39 +134,45 @@
                                 <div class="card-header d-flex justify-content-between align-items-center">
                                     <h5 class="mb-0">Tickets Overview</h5>
                                     <div class="btn-group" role="group">
-                                        <button type="button" class="btn btn-sm btn-outline-secondary active" data-period="day">Day</button>
+                                        <button type="button" class="btn btn-sm btn-outline-secondary" data-period="day">Day</button>
                                         <button type="button" class="btn btn-sm btn-outline-secondary" data-period="week">Week</button>
-                                        <button type="button" class="btn btn-sm btn-outline-secondary" data-period="month">Month</button>
+                                        <button type="button" class="btn btn-sm btn-outline-secondary active" data-period="month">Month</button>
                                     </div>
                                 </div>
-                                <!-- REPLACE with this -->
-<div class="card-body">
-    <div style="position:relative; height:300px;">
-        <canvas id="tickets-overview-chart"></canvas>
-    </div>
-</div>
+                                <div class="card-body">
+                                    <div style="position:relative;height:300px;">
+                                        <canvas id="tickets-overview-chart"></canvas>
+                                    </div>
+                                </div>
                             </div>
                         </div>
+
                         <!-- Status Doughnut -->
                         <div class="col-12 col-xl-4">
                             <div class="card h-100">
                                 <div class="card-header"><h5 class="mb-0">Ticket Status</h5></div>
                                 <div class="card-body d-flex flex-column">
-                                    <div style="height:200px;">
+                                    <div style="position:relative;height:200px;">
                                         <canvas id="ticket-status-chart"></canvas>
                                     </div>
                                     <div class="mt-3">
                                         <div class="d-flex justify-content-between mb-1">
-                                            <span><span class="me-1" style="display:inline-block;width:12px;height:12px;background:#4e73df;border-radius:50%;"></span>Open</span>
-                                            <strong>{{ agent_report_open_percent }}%</strong>
+                                            <span>
+                                                <span class="me-1" style="display:inline-block;width:12px;height:12px;background:#4e73df;border-radius:50%;"></span>Open
+                                            </span>
+                                            <strong id="status-open-pct">{{ agent_report_open_percent|default:"0" }}%</strong>
                                         </div>
                                         <div class="d-flex justify-content-between mb-1">
-                                            <span><span class="me-1" style="display:inline-block;width:12px;height:12px;background:#1cc88a;border-radius:50%;"></span>Resolved</span>
-                                            <strong>{{ agent_report_resolved_percent }}%</strong>
+                                            <span>
+                                                <span class="me-1" style="display:inline-block;width:12px;height:12px;background:#1cc88a;border-radius:50%;"></span>Resolved
+                                            </span>
+                                            <strong id="status-resolved-pct">{{ agent_report_resolved_percent|default:"0" }}%</strong>
                                         </div>
                                         <div class="d-flex justify-content-between">
-                                            <span><span class="me-1" style="display:inline-block;width:12px;height:12px;background:#36b9cc;border-radius:50%;"></span>In Progress</span>
-                                            <strong>{{ agent_report_inprogress_percent }}%</strong>
+                                            <span>
+                                                <span class="me-1" style="display:inline-block;width:12px;height:12px;background:#36b9cc;border-radius:50%;"></span>In Progress
+                                            </span>
+                                            <strong id="status-inprogress-pct">{{ agent_report_inprogress_percent|default:"0" }}%</strong>
                                         </div>
                                     </div>
                                 </div>
@@ -179,7 +184,7 @@
                         <div class="col-12 col-lg-6">
                             <div class="card h-100">
                                 <div class="card-header"><h5 class="mb-0">Tickets by Priority</h5></div>
-                                <div class="card-body" style="height:250px;">
+                                <div class="card-body" style="position:relative;height:250px;">
                                     <canvas id="tickets-by-priority-chart"></canvas>
                                 </div>
                             </div>
@@ -187,43 +192,25 @@
                         <div class="col-12 col-lg-6">
                             <div class="card h-100">
                                 <div class="card-header"><h5 class="mb-0">Tickets by Channel</h5></div>
-                                <div class="card-body" style="height:250px;">
+                                <div class="card-body" style="position:relative;height:250px;">
                                     <canvas id="tickets-by-channel-chart"></canvas>
                                 </div>
                             </div>
                         </div>
                     </div>
-
                 </div><!-- end overview-section -->
 
                 <!-- ===== QUALITY SECTION ===== -->
                 <div id="quality-section" style="display:none;">
                     <div class="row g-3 mb-4">
+                        <!-- Quality Metrics progress bars -->
                         <div class="col-12 col-md-6">
                             <div class="card h-100">
                                 <div class="card-header"><h5 class="mb-0">Quality Metrics</h5></div>
                                 <div class="card-body">
-                                    {% for label, value, target in quality_metrics %}
-                                    <div class="mb-4">
-                                        <div class="d-flex justify-content-between align-items-center mb-2">
-                                            <div>
-                                                <h6 class="mb-0">{{ label }}</h6>
-                                                <small class="text-muted">Target: {{ target }}</small>
-                                            </div>
-                                            <div class="text-end">
-                                                <h4 class="mb-0">{{ value }}%</h4>
-                                                <span class="badge bg-{% if value >= 80 %}success{% elif value >= 60 %}warning{% else %}danger{% endif %}">
-                                                    {% if value >= 80 %}Good{% elif value >= 60 %}Average{% else %}Poor{% endif %}
-                                                </span>
-                                            </div>
-                                        </div>
-                                        <div class="progress" style="height:8px;">
-                                            <div class="progress-bar bg-{% if value >= 80 %}success{% elif value >= 60 %}warning{% else %}danger{% endif %}"
-                                                 style="width:{{ value }}%"></div>
-                                        </div>
-                                    </div>
-                                    {% empty %}
-                                    <!-- Fallback to individual context vars -->
+
+                                    <!-- First Response Quality -->
+                                    {% with val=agent_quality_first_response_rate|default:0 %}
                                     <div class="mb-4">
                                         <div class="d-flex justify-content-between align-items-center mb-2">
                                             <div>
@@ -231,17 +218,27 @@
                                                 <small class="text-muted">Target: &lt; 2 hours</small>
                                             </div>
                                             <div class="text-end">
-                                                <h4 class="mb-0">{{ agent_quality_first_response_rate }}%</h4>
-                                                <span class="badge bg-{% if agent_quality_first_response_rate >= 80 %}success{% elif agent_quality_first_response_rate >= 60 %}warning{% else %}danger{% endif %}">
-                                                    {% if agent_quality_first_response_rate >= 80 %}Good{% elif agent_quality_first_response_rate >= 60 %}Average{% else %}Poor{% endif %}
+                                                <h4 class="mb-0">{{ val }}%</h4>
+                                                <span class="badge
+                                                    {% if val >= 80 %}bg-success
+                                                    {% elif val >= 60 %}bg-warning
+                                                    {% else %}bg-danger{% endif %}">
+                                                    {% if val >= 80 %}Good{% elif val >= 60 %}Average{% else %}Poor{% endif %}
                                                 </span>
                                             </div>
                                         </div>
                                         <div class="progress" style="height:8px;">
-                                            <div class="progress-bar bg-{% if agent_quality_first_response_rate >= 80 %}success{% elif agent_quality_first_response_rate >= 60 %}warning{% else %}danger{% endif %}"
-                                                 style="width:{{ agent_quality_first_response_rate }}%"></div>
+                                            <div class="progress-bar
+                                                {% if val >= 80 %}bg-success
+                                                {% elif val >= 60 %}bg-warning
+                                                {% else %}bg-danger{% endif %}"
+                                                style="width:{{ val }}%"></div>
                                         </div>
                                     </div>
+                                    {% endwith %}
+
+                                    <!-- Resolution Quality -->
+                                    {% with val=agent_quality_resolution_rate|default:0 %}
                                     <div class="mb-4">
                                         <div class="d-flex justify-content-between align-items-center mb-2">
                                             <div>
@@ -249,17 +246,27 @@
                                                 <small class="text-muted">Target: &lt; 24 hours</small>
                                             </div>
                                             <div class="text-end">
-                                                <h4 class="mb-0">{{ agent_quality_resolution_rate }}%</h4>
-                                                <span class="badge bg-{% if agent_quality_resolution_rate >= 80 %}success{% elif agent_quality_resolution_rate >= 60 %}warning{% else %}danger{% endif %}">
-                                                    {% if agent_quality_resolution_rate >= 80 %}Good{% elif agent_quality_resolution_rate >= 60 %}Average{% else %}Poor{% endif %}
+                                                <h4 class="mb-0">{{ val }}%</h4>
+                                                <span class="badge
+                                                    {% if val >= 80 %}bg-success
+                                                    {% elif val >= 60 %}bg-warning
+                                                    {% else %}bg-danger{% endif %}">
+                                                    {% if val >= 80 %}Good{% elif val >= 60 %}Average{% else %}Poor{% endif %}
                                                 </span>
                                             </div>
                                         </div>
                                         <div class="progress" style="height:8px;">
-                                            <div class="progress-bar bg-{% if agent_quality_resolution_rate >= 80 %}success{% elif agent_quality_resolution_rate >= 60 %}warning{% else %}danger{% endif %}"
-                                                 style="width:{{ agent_quality_resolution_rate }}%"></div>
+                                            <div class="progress-bar
+                                                {% if val >= 80 %}bg-success
+                                                {% elif val >= 60 %}bg-warning
+                                                {% else %}bg-danger{% endif %}"
+                                                style="width:{{ val }}%"></div>
                                         </div>
                                     </div>
+                                    {% endwith %}
+
+                                    <!-- Customer Satisfaction -->
+                                    {% with val=agent_quality_satisfaction_rate|default:0 %}
                                     <div class="mb-4">
                                         <div class="d-flex justify-content-between align-items-center mb-2">
                                             <div>
@@ -267,55 +274,72 @@
                                                 <small class="text-muted">Based on ratings</small>
                                             </div>
                                             <div class="text-end">
-                                                <h4 class="mb-0">{{ agent_quality_satisfaction_rate }}%</h4>
-                                                <span class="badge bg-{% if agent_quality_satisfaction_rate >= 80 %}success{% elif agent_quality_satisfaction_rate >= 60 %}warning{% else %}danger{% endif %}">
-                                                    {% if agent_quality_satisfaction_rate >= 80 %}Good{% elif agent_quality_satisfaction_rate >= 60 %}Average{% else %}Poor{% endif %}
+                                                <h4 class="mb-0">{{ val }}%</h4>
+                                                <span class="badge
+                                                    {% if val >= 80 %}bg-success
+                                                    {% elif val >= 60 %}bg-warning
+                                                    {% else %}bg-danger{% endif %}">
+                                                    {% if val >= 80 %}Good{% elif val >= 60 %}Average{% else %}Poor{% endif %}
                                                 </span>
                                             </div>
                                         </div>
                                         <div class="progress" style="height:8px;">
-                                            <div class="progress-bar bg-{% if agent_quality_satisfaction_rate >= 80 %}success{% elif agent_quality_satisfaction_rate >= 60 %}warning{% else %}danger{% endif %}"
-                                                 style="width:{{ agent_quality_satisfaction_rate }}%"></div>
+                                            <div class="progress-bar
+                                                {% if val >= 80 %}bg-success
+                                                {% elif val >= 60 %}bg-warning
+                                                {% else %}bg-danger{% endif %}"
+                                                style="width:{{ val }}%"></div>
                                         </div>
                                     </div>
-                                    {% endfor %}
+                                    {% endwith %}
+
                                 </div>
                             </div>
                         </div>
+
+                        <!-- Overall Quality Score -->
                         <div class="col-12 col-md-6">
                             <div class="card h-100">
                                 <div class="card-header"><h5 class="mb-0">Overall Quality Score</h5></div>
                                 <div class="card-body d-flex flex-column justify-content-center align-items-center">
+                                    {% with score=agent_quality_overall_score|default:0 %}
                                     <div class="text-center mb-4">
-                                        <div class="display-4 fw-bold">{{ agent_quality_overall_score }}%</div>
+                                        <div class="display-4 fw-bold">{{ score }}%</div>
                                         <div class="text-muted">
-                                            {% if agent_quality_overall_score >= 90 %}Excellent
-                                            {% elif agent_quality_overall_score >= 80 %}Good
-                                            {% elif agent_quality_overall_score >= 70 %}Average
-                                            {% elif agent_quality_overall_score >= 60 %}Below Average
+                                            {% if score >= 90 %}Excellent
+                                            {% elif score >= 80 %}Good
+                                            {% elif score >= 70 %}Average
+                                            {% elif score >= 60 %}Below Average
                                             {% else %}Poor{% endif %}
                                         </div>
                                     </div>
                                     <div class="progress w-75" style="height:12px;">
-                                        <div class="progress-bar bg-{% if agent_quality_overall_score >= 80 %}success{% elif agent_quality_overall_score >= 60 %}warning{% else %}danger{% endif %}"
-                                             style="width:{{ agent_quality_overall_score }}%"></div>
+                                        <div class="progress-bar
+                                            {% if score >= 80 %}bg-success
+                                            {% elif score >= 60 %}bg-warning
+                                            {% else %}bg-danger{% endif %}"
+                                            style="width:{{ score }}%"></div>
                                     </div>
+                                    {% endwith %}
+
                                     <div class="row g-2 mt-4 w-100">
                                         <div class="col-6">
                                             <div class="text-muted small">First Response</div>
-                                            <div class="fw-bold">{{ agent_quality_first_response_rate }}%</div>
+                                            <div class="fw-bold">{{ agent_quality_first_response_rate|default:"0" }}%</div>
                                         </div>
                                         <div class="col-6">
                                             <div class="text-muted small">Resolution</div>
-                                            <div class="fw-bold">{{ agent_quality_resolution_rate }}%</div>
+                                            <div class="fw-bold">{{ agent_quality_resolution_rate|default:"0" }}%</div>
                                         </div>
                                         <div class="col-6">
                                             <div class="text-muted small">Satisfaction</div>
-                                            <div class="fw-bold">{{ agent_quality_satisfaction_rate }}%</div>
+                                            <div class="fw-bold">{{ agent_quality_satisfaction_rate|default:"0" }}%</div>
                                         </div>
                                         <div class="col-6">
                                             <div class="text-muted small">Ratings</div>
-                                            <div class="fw-bold">{{ agent_quality_positive_ratings }}/{{ agent_quality_total_ratings }}</div>
+                                            <div class="fw-bold">
+                                                {{ agent_quality_positive_ratings|default:"0" }}/{{ agent_quality_total_ratings|default:"0" }}
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -327,58 +351,108 @@
                 <!-- ===== SLA SECTION ===== -->
                 <div id="sla-section" style="display:none;">
                     <div class="row g-3 mb-4">
+
+                        <!-- SLA Compliance -->
                         <div class="col-12 col-md-4">
                             <div class="card h-100">
                                 <div class="card-header"><h5 class="mb-0">SLA Compliance</h5></div>
                                 <div class="card-body text-center">
-                                    <div class="display-4 fw-bold mb-2">{{ agent_sla_compliance_rate }}%</div>
-                                    <span class="badge bg-{% if agent_sla_compliance_rate >= 90 %}success{% elif agent_sla_compliance_rate >= 80 %}warning{% else %}danger{% endif %} mb-3">
-                                        {% if agent_sla_compliance_rate >= 90 %}Excellent{% elif agent_sla_compliance_rate >= 80 %}Good{% else %}Needs Improvement{% endif %}
+                                    {% with rate=agent_sla_compliance_rate|default:0 %}
+                                    <div class="display-4 fw-bold mb-2">{{ rate }}%</div>
+                                    <span class="badge
+                                        {% if rate >= 90 %}bg-success
+                                        {% elif rate >= 80 %}bg-warning
+                                        {% else %}bg-danger{% endif %} mb-3">
+                                        {% if rate >= 90 %}Excellent{% elif rate >= 80 %}Good{% else %}Needs Improvement{% endif %}
                                     </span>
                                     <div class="progress" style="height:10px;">
-                                        <div class="progress-bar bg-{% if agent_sla_compliance_rate >= 90 %}success{% elif agent_sla_compliance_rate >= 80 %}warning{% else %}danger{% endif %}"
-                                             style="width:{{ agent_sla_compliance_rate }}%"></div>
+                                        <div class="progress-bar
+                                            {% if rate >= 90 %}bg-success
+                                            {% elif rate >= 80 %}bg-warning
+                                            {% else %}bg-danger{% endif %}"
+                                            style="width:{{ rate }}%"></div>
                                     </div>
+                                    {% endwith %}
                                     <div class="mt-3 text-start">
-                                        <div class="d-flex justify-content-between"><span class="text-muted">SLA Target:</span><strong>24 hours</strong></div>
-                                        <div class="d-flex justify-content-between"><span class="text-muted">Met SLA:</span><strong class="text-success">{{ agent_sla_met_count }}</strong></div>
-                                        <div class="d-flex justify-content-between"><span class="text-muted">Missed SLA:</span><strong class="text-danger">{{ agent_sla_missed_count }}</strong></div>
+                                        <div class="d-flex justify-content-between py-1 border-bottom">
+                                            <span class="text-muted">SLA Target:</span>
+                                            <strong>24 hours</strong>
+                                        </div>
+                                        <div class="d-flex justify-content-between py-1 border-bottom">
+                                            <span class="text-muted">Met SLA:</span>
+                                            <strong class="text-success">{{ agent_sla_met_count|default:"0" }}</strong>
+                                        </div>
+                                        <div class="d-flex justify-content-between py-1">
+                                            <span class="text-muted">Missed SLA:</span>
+                                            <strong class="text-danger">{{ agent_sla_missed_count|default:"0" }}</strong>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
+
+                        <!-- SLA Performance Chart -->
                         <div class="col-12 col-md-4">
                             <div class="card h-100">
                                 <div class="card-header"><h5 class="mb-0">SLA Performance</h5></div>
-                                <div class="card-body" style="height:250px;">
+                                <div class="card-body d-flex flex-column align-items-center justify-content-center" style="position:relative;min-height:250px;">
                                     <canvas id="sla-performance-chart"></canvas>
+                                    <!-- shown when both values are 0 -->
+                                    <div id="sla-no-data" class="text-center text-muted" style="display:none;">
+                                        <i class="bi bi-bar-chart fs-1 d-block mb-2"></i>
+                                        No resolved tickets yet
+                                    </div>
                                 </div>
                             </div>
                         </div>
+
+                        <!-- At Risk Tickets -->
                         <div class="col-12 col-md-4">
                             <div class="card h-100">
                                 <div class="card-header"><h5 class="mb-0">At Risk Tickets</h5></div>
                                 <div class="card-body text-center">
-                                    <div class="display-4 fw-bold mb-2">{{ agent_sla_breached_count }}</div>
-                                    <span class="badge bg-{% if agent_sla_breached_count == 0 %}success{% elif agent_sla_breached_count <= 5 %}warning{% else %}danger{% endif %} mb-3">
-                                        {% if agent_sla_breached_count == 0 %}All Clear{% elif agent_sla_breached_count <= 5 %}At Risk{% else %}Critical{% endif %}
+                                    {% with cnt=agent_sla_breached_count|default:0 %}
+                                    <div class="display-4 fw-bold mb-2">{{ cnt }}</div>
+                                    <span class="badge
+                                        {% if cnt == 0 %}bg-success
+                                        {% elif cnt <= 5 %}bg-warning
+                                        {% else %}bg-danger{% endif %} mb-3">
+                                        {% if cnt == 0 %}All Clear{% elif cnt <= 5 %}At Risk{% else %}Critical{% endif %}
                                     </span>
-                                    <p class="text-muted small">Tickets currently breaching 24-hour SLA</p>
+                                    {% endwith %}
+                                    <p class="text-muted small">Open tickets breaching 24-hour SLA</p>
+
+                                    <!-- Summary stats -->
+                                    <div class="mt-3 text-start">
+                                        <div class="d-flex justify-content-between py-1 border-bottom">
+                                            <span class="text-muted">Total Assigned:</span>
+                                            <strong>{{ agent_report_total_tickets|default:"0" }}</strong>
+                                        </div>
+                                        <div class="d-flex justify-content-between py-1 border-bottom">
+                                            <span class="text-muted">Resolved:</span>
+                                            <strong>{{ agent_report_resolved_total|default:"0" }}</strong>
+                                        </div>
+                                        <div class="d-flex justify-content-between py-1">
+                                            <span class="text-muted">Resolution Rate:</span>
+                                            <strong>{{ agent_report_resolution_rate|default:"0" }}%</strong>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
+
                     </div>
                 </div><!-- end sla-section -->
 
                 <!-- Agent Performance Table -->
                 <div class="card mb-4">
-                    <div class="card-header d-flex justify-content-between align-items-center">
+                    <div class="card-header">
                         <h5 class="mb-0">My Performance Summary</h5>
                     </div>
                     <div class="card-body">
                         <div class="table-responsive">
-                            <table class="table table-hover">
-                                <thead>
+                            <table class="table table-hover align-middle">
+                                <thead class="table-light">
                                     <tr>
                                         <th>Agent</th>
                                         <th>Assigned</th>
@@ -393,17 +467,16 @@
                                         <td>
                                             <div class="d-flex align-items-center gap-2">
                                                 <div class="agent-avatar">{{ agent_report_user_name|slice:":1"|upper }}</div>
-                                                <span>{{ agent_report_user_name }}</span>
+                                                <span>{{ agent_report_user_name|default:"Agent" }}</span>
                                             </div>
                                         </td>
-                                        <td>{{ agent_report_total_tickets }}</td>
-                                        <td>{{ agent_report_resolved_total }}</td>
-                                        <td>{{ agent_report_avg_response_display }}</td>
-                                        <td>{{ agent_report_csat_display }}</td>
+                                        <td>{{ agent_report_total_tickets|default:"0" }}</td>
+                                        <td>{{ agent_report_resolved_total|default:"0" }}</td>
+                                        <td>{{ agent_report_avg_response_display|default:"0h 0m" }}</td>
+                                        <td>{{ agent_report_csat_display|default:"N/A" }}</td>
                                         <td>
-                                            <span class="text-success">
-                                                <i class="bi bi-graph-up-arrow"></i>
-                                                {{ agent_avg_rating|default:"0.0" }}/5
+                                            <span class="text-success fw-bold">
+                                                <i class="bi bi-star-fill me-1"></i>{{ agent_avg_rating|default:"0.0" }}/5
                                             </span>
                                         </td>
                                     </tr>
@@ -456,7 +529,8 @@
 
             <footer class="dashboard-footer mt-4 mb-2 text-muted small">
                 <div class="d-flex justify-content-between align-items-center">
-                    <a href="https://ultrakeyit.com/" target="_blank" rel="noopener noreferrer" class="text-muted text-decoration-none">Ultrakey IT Solutions</a>
+                    <a href="https://ultrakeyit.com/" target="_blank" rel="noopener noreferrer"
+                       class="text-muted text-decoration-none">Ultrakey IT Solutions</a>
                     <span>All systems operational</span>
                 </div>
             </footer>
@@ -467,7 +541,8 @@
 <div id="modals-container"></div>
 
 <!-- Loading overlay -->
-<div id="loadingOverlay" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:9999;align-items:center;justify-content:center;">
+<div id="loadingOverlay" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;
+     background:rgba(0,0,0,0.5);z-index:9999;align-items:center;justify-content:center;">
     <div class="bg-white p-4 rounded text-center shadow">
         <div class="spinner-border text-primary mb-2" role="status"></div>
         <div>Processing...</div>
@@ -478,170 +553,185 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <script>
-    // ── Data from Django ──
-    const INITIAL_DATA = {
-        months:   JSON.parse('{{ agent_report_overview_months_json|default:"[]"|safe }}'),
-        created:  JSON.parse('{{ agent_report_overview_created_json|default:"[]"|safe }}'),
-        resolved: JSON.parse('{{ agent_report_overview_resolved_json|default:"[]"|safe }}'),
-        status:   JSON.parse('{{ agent_report_status_percents_json|default:"[0,0,0]"|safe }}'),
-        priority: JSON.parse('{{ agent_report_priority_counts_json|default:"[0,0,0,0]"|safe }}'),
-        channel:  [
-            parseInt('{{ agent_report_channel_email_count|default:0 }}'),
-            parseInt('{{ agent_report_channel_phone_count|default:0 }}'),
-            parseInt('{{ agent_report_channel_chat_count|default:0 }}'),
-            parseInt('{{ agent_report_channel_web_count|default:0 }}'),
-        ],
-        sla: {
-            met:    parseInt('{{ agent_sla_met_count|default:0 }}'),
-            missed: parseInt('{{ agent_sla_missed_count|default:0 }}'),
-        },
-    };
-
-    // Debug: Log the actual data
-    console.log('=== INITIAL DATA DEBUG ===');
-    console.log('Months:', INITIAL_DATA.months);
-    console.log('Created:', INITIAL_DATA.created);
-    console.log('Resolved:', INITIAL_DATA.resolved);
-    console.log('Status:', INITIAL_DATA.status);
-    console.log('Priority:', INITIAL_DATA.priority);
-    console.log('Channel:', INITIAL_DATA.channel);
-    console.log('========================');
-
-    // Fallback if months empty
-    if (!Array.isArray(INITIAL_DATA.months) || INITIAL_DATA.months.length === 0) {
-        INITIAL_DATA.months   = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-        INITIAL_DATA.created  = [0,0,0,0,0,0,0,0,0,0,0,0];
-        INITIAL_DATA.resolved = [0,0,0,0,0,0,0,0,0,0,0,0];
+// ─────────────────────────────────────────────
+// 1. INITIAL DATA — injected safely from Django
+// ─────────────────────────────────────────────
+const INITIAL_DATA = {
+    months:   {{ agent_report_overview_months_json|default:"[]"|safe }},
+    created:  {{ agent_report_overview_created_json|default:"[]"|safe }},
+    resolved: {{ agent_report_overview_resolved_json|default:"[]"|safe }},
+    status:   {{ agent_report_status_percents_json|default:"[0,0,0]"|safe }},
+    priority: {{ agent_report_priority_counts_json|default:"[0,0,0,0]"|safe }},
+    channel:  [
+        {{ agent_report_channel_email_count|default:0 }},
+        {{ agent_report_channel_phone_count|default:0 }},
+        {{ agent_report_channel_chat_count|default:0 }},
+        {{ agent_report_channel_web_count|default:0 }}
+    ],
+    sla: {
+        met:    {{ agent_sla_met_count|default:0 }},
+        missed: {{ agent_sla_missed_count|default:0 }}
     }
+};
 
-    // ── Chart instances ──
-    let overviewChart = null, statusChart = null, priorityChart = null, channelChart = null, slaChart = null;
+// Fallback if overview arrays are empty
+if (!Array.isArray(INITIAL_DATA.months) || INITIAL_DATA.months.length === 0) {
+    INITIAL_DATA.months   = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    INITIAL_DATA.created  = [0,0,0,0,0,0,0,0,0,0,0,0];
+    INITIAL_DATA.resolved = [0,0,0,0,0,0,0,0,0,0,0,0];
+}
 
-    // ── Component loader ──
-    function loadComponent(url, elementId) {
-        return fetch(url)
-            .then(r => { if (!r.ok) throw new Error('Network error'); return r.text(); })
-            .then(html => {
-                const el = document.getElementById(elementId);
-                if (!el) return false;
-                el.innerHTML = html;
-                if (url.includes('sidebar.html')) {
-                    document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
-                    const active = document.querySelector('.nav-item[data-page="reports"]');
-                    if (active) active.classList.add('active');
-                }
-                if (url.includes('header.html') && window.initializeHeader) {
-                    setTimeout(() => window.initializeHeader(), 50);
-                }
-                return true;
-            })
-            .catch(err => { console.error('Error loading component:', err); return false; });
-    }
+// ─────────────────────────────────────────────
+// 2. CHART INSTANCES
+// ─────────────────────────────────────────────
+let overviewChart = null;
+let statusChart   = null;
+let priorityChart = null;
+let channelChart  = null;
+let slaChart      = null;
 
-    // ── Loading overlay ──
-    function showLoading() {
-        const el = document.getElementById('loadingOverlay');
-        if (el) el.style.display = 'flex';
-    }
-    function hideLoading() {
-        const el = document.getElementById('loadingOverlay');
-        if (el) el.style.display = 'none';
-    }
+// ─────────────────────────────────────────────
+// 3. LOADING HELPERS
+// ─────────────────────────────────────────────
+function showLoading() {
+    const el = document.getElementById('loadingOverlay');
+    if (el) el.style.display = 'flex';
+}
+function hideLoading() {
+    const el = document.getElementById('loadingOverlay');
+    if (el) el.style.display = 'none';
+}
 
-    // ── Initialize all charts ──
-    function initializeCharts() {
-        console.log('=== CHART INITIALIZATION DEBUG ===');
-        console.log('INITIAL_DATA:', INITIAL_DATA);
-        
-        // Overview line chart
-        const overviewCtx = document.getElementById('tickets-overview-chart');
-        console.log('Overview canvas element:', overviewCtx);
-        
-        if (overviewCtx) {
-            console.log('Creating overview chart with data:');
-            console.log('Labels:', INITIAL_DATA.months);
-            console.log('Created data:', INITIAL_DATA.created);
-            console.log('Resolved data:', INITIAL_DATA.resolved);
-            
-            overviewChart = new Chart(overviewCtx, {
-                type: 'line',
-                data: {
-                    labels: INITIAL_DATA.months,
-                    datasets: [
-                        {
-                            label: 'Created',
-                            data: INITIAL_DATA.created,
-                            borderColor: '#4e73df',
-                            backgroundColor: 'rgba(78,115,223,0.1)',
-                            tension: 0.4,
-                            fill: true,
-                        },
-                        {
-                            label: 'Resolved',
-                            data: INITIAL_DATA.resolved,
-                            borderColor: '#1cc88a',
-                            backgroundColor: 'rgba(28,200,138,0.1)',
-                            tension: 0.4,
-                            fill: true,
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { 
-                        legend: { position: 'top' },
-                        tooltip: {
-                            mode: 'index',
-                            intersect: false,
-                        }
+// ─────────────────────────────────────────────
+// 4. COMPONENT LOADER (sidebar / header / modals)
+// ─────────────────────────────────────────────
+function loadComponent(url, elementId) {
+    return fetch(url)
+        .then(r => { if (!r.ok) throw new Error('Network error'); return r.text(); })
+        .then(html => {
+            const el = document.getElementById(elementId);
+            if (!el) return false;
+            el.innerHTML = html;
+            if (url.includes('sidebar.html')) {
+                document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+                const active = document.querySelector('.nav-item[data-page="reports"]');
+                if (active) active.classList.add('active');
+            }
+            if (url.includes('header.html') && window.initializeHeader) {
+                setTimeout(() => window.initializeHeader(), 50);
+            }
+            return true;
+        })
+        .catch(err => { console.error('Error loading component:', err); return false; });
+}
+
+// ─────────────────────────────────────────────
+// 5. CHART INIT
+// ─────────────────────────────────────────────
+function initializeCharts() {
+    // --- Overview line chart ---
+    const overviewCtx = document.getElementById('tickets-overview-chart');
+    if (overviewCtx) {
+        overviewChart = new Chart(overviewCtx, {
+            type: 'line',
+            data: {
+                labels: INITIAL_DATA.months,
+                datasets: [
+                    {
+                        label: 'Created',
+                        data: INITIAL_DATA.created,
+                        borderColor: '#4e73df',
+                        backgroundColor: 'rgba(78,115,223,0.1)',
+                        tension: 0.4,
+                        fill: true,
+                        pointBackgroundColor: '#4e73df',
+                        pointRadius: 4,
                     },
-                    scales: { 
-                        y: { 
-                            beginAtZero: true, 
-                            ticks: { stepSize: 1 },
-                            title: {
-                                display: true,
-                                text: 'Number of Tickets'
-                            }
-                        },
-                        x: {
-                            title: {
-                                display: true,
-                                text: 'Month'
-                            }
-                        }
+                    {
+                        label: 'Resolved',
+                        data: INITIAL_DATA.resolved,
+                        borderColor: '#1cc88a',
+                        backgroundColor: 'rgba(28,200,138,0.1)',
+                        tension: 0.4,
+                        fill: true,
+                        pointBackgroundColor: '#1cc88a',
+                        pointRadius: 4,
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'top' },
+                    tooltip: { mode: 'index', intersect: false }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: { stepSize: 1, precision: 0 },
+                        title: { display: true, text: 'Tickets' }
+                    },
+                    x: {
+                        title: { display: true, text: 'Period' }
                     }
                 }
-            });
-            console.log('Overview chart created:', overviewChart);
-        } else {
-            console.error('Overview canvas element not found!');
-        }
+            }
+        });
+    }
 
-        // Status doughnut
-        const statusCtx = document.getElementById('ticket-status-chart');
-        if (statusCtx) {
+    // --- Status doughnut ---
+    const statusCtx = document.getElementById('ticket-status-chart');
+    if (statusCtx) {
+        const hasStatus = INITIAL_DATA.status.some(v => v > 0);
+        const hasTickets = INITIAL_DATA.status.reduce((sum, v) => sum + v, 0) > 0;
+        
+        if (hasTickets && hasStatus) {
             statusChart = new Chart(statusCtx, {
                 type: 'doughnut',
                 data: {
                     labels: ['Open', 'Resolved', 'In Progress'],
-                    datasets: [{ data: INITIAL_DATA.status, backgroundColor: ['#4e73df', '#1cc88a', '#36b9cc'] }]
+                    datasets: [{
+                        data: INITIAL_DATA.status,
+                        backgroundColor: ['#4e73df', '#1cc88a', '#36b9cc'],
+                        borderWidth: 2,
+                    }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: {
                         legend: { display: false },
-                        tooltip: { callbacks: { label: ctx => `${ctx.label}: ${ctx.parsed}%` } }
-                    }
+                        tooltip: {
+                            callbacks: {
+                                label: ctx => `${ctx.label}: ${ctx.parsed}%`
+                            }
+                        }
+                    },
+                    cutout: '70%'
                 }
             });
+        } else {
+            // Show "No Data" state when no tickets
+            statusCtx.style.display = 'none';
+            const noDataDiv = document.createElement('div');
+            noDataDiv.className = 'text-center text-muted';
+            noDataDiv.style.position = 'absolute';
+            noDataDiv.style.top = '50%';
+            noDataDiv.style.left = '50%';
+            noDataDiv.style.transform = 'translate(-50%, -50%)';
+            noDataDiv.innerHTML = '<i class="bi bi-pie-chart fs-1 d-block mb-2"></i>No tickets assigned';
+            statusCtx.parentNode.appendChild(noDataDiv);
         }
+    }
 
-        // Priority bar
-        const priorityCtx = document.getElementById('tickets-by-priority-chart');
-        if (priorityCtx) {
+    // --- Priority bar ---
+    const priorityCtx = document.getElementById('tickets-by-priority-chart');
+    if (priorityCtx) {
+        const hasPriority = INITIAL_DATA.priority.some(v => v > 0);
+        const totalPriority = INITIAL_DATA.priority.reduce((sum, v) => sum + v, 0);
+        
+        if (hasPriority && totalPriority > 0) {
             priorityChart = new Chart(priorityCtx, {
                 type: 'bar',
                 data: {
@@ -649,287 +739,437 @@
                     datasets: [{
                         label: 'Tickets',
                         data: INITIAL_DATA.priority,
-                        backgroundColor: ['#36b9cc', '#1cc88a', '#f6c23e', '#e74a3b']
+                        backgroundColor: ['#36b9cc', '#1cc88a', '#f6c23e', '#e74a3b'],
+                        borderRadius: 4,
                     }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: { legend: { display: false } },
-                    scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+                    scales: {
+                        y: { beginAtZero: true, ticks: { stepSize: 1, precision: 0 } }
+                    }
                 }
             });
+        } else {
+            // Show "No Data" state when no tickets
+            priorityCtx.style.display = 'none';
+            const noDataDiv = document.createElement('div');
+            noDataDiv.className = 'text-center text-muted';
+            noDataDiv.style.position = 'absolute';
+            noDataDiv.style.top = '50%';
+            noDataDiv.style.left = '50%';
+            noDataDiv.style.transform = 'translate(-50%, -50%)';
+            noDataDiv.innerHTML = '<i class="bi bi-bar-chart fs-1 d-block mb-2"></i>No priority data';
+            priorityCtx.parentNode.appendChild(noDataDiv);
         }
+    }
 
-        // Channel pie
-        const channelCtx = document.getElementById('tickets-by-channel-chart');
-        if (channelCtx) {
+    // --- Channel pie ---
+    const channelCtx = document.getElementById('tickets-by-channel-chart');
+    if (channelCtx) {
+        const hasChannel = INITIAL_DATA.channel.some(v => v > 0);
+        const totalChannel = INITIAL_DATA.channel.reduce((sum, v) => sum + v, 0);
+        
+        if (hasChannel && totalChannel > 0) {
             channelChart = new Chart(channelCtx, {
                 type: 'pie',
                 data: {
                     labels: ['Email', 'Phone', 'Chat', 'Web'],
                     datasets: [{
                         data: INITIAL_DATA.channel,
-                        backgroundColor: ['#4e73df', '#1cc88a', '#36b9cc', '#f6c23e']
+                        backgroundColor: ['#4e73df', '#1cc88a', '#36b9cc', '#f6c23e'],
+                        borderWidth: 2,
                     }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    plugins: { legend: { position: 'bottom' } }
+                    plugins: {
+                        legend: { position: 'bottom' },
+                        tooltip: {
+                            callbacks: {
+                                label: ctx => `${ctx.label}: ${ctx.parsed}`
+                            }
+                        }
+                    }
                 }
             });
+        } else {
+            // Show "No Data" state when no tickets
+            channelCtx.style.display = 'none';
+            const noDataDiv = document.createElement('div');
+            noDataDiv.className = 'text-center text-muted';
+            noDataDiv.style.position = 'absolute';
+            noDataDiv.style.top = '50%';
+            noDataDiv.style.left = '50%';
+            noDataDiv.style.transform = 'translate(-50%, -50%)';
+            noDataDiv.innerHTML = '<i class="bi bi-pie-chart fs-1 d-block mb-2"></i>No channel data';
+            channelCtx.parentNode.appendChild(noDataDiv);
         }
     }
+}
 
-    // ── SLA chart (lazy) ──
-    function initializeSLAChart() {
-        const slaCtx = document.getElementById('sla-performance-chart');
-        if (!slaCtx) return;
-        if (slaChart) slaChart.destroy();
-        slaChart = new Chart(slaCtx, {
-            type: 'doughnut',
-            data: {
-                labels: ['SLA Met', 'SLA Missed'],
-                datasets: [{
-                    data: [INITIAL_DATA.sla.met, INITIAL_DATA.sla.missed],
-                    backgroundColor: ['#1cc88a', '#e74a3b'],
-                }]
+// ─────────────────────────────────────────────
+// 6. SLA CHART — initialised lazily when tab is clicked
+// ─────────────────────────────────────────────
+function initializeSLAChart() {
+    const slaCtx   = document.getElementById('sla-performance-chart');
+    const noData   = document.getElementById('sla-no-data');
+    const met      = INITIAL_DATA.sla.met    || 0;
+    const missed   = INITIAL_DATA.sla.missed || 0;
+    const total    = met + missed;
+
+    if (!slaCtx) return;
+    if (slaChart) { slaChart.destroy(); slaChart = null; }
+
+    if (total === 0) {
+        // No resolved tickets — show placeholder instead of blank chart
+        slaCtx.style.display = 'none';
+        if (noData) noData.style.display = 'block';
+        return;
+    }
+
+    if (noData) noData.style.display = 'none';
+    slaCtx.style.display = 'block';
+
+    slaChart = new Chart(slaCtx, {
+        type: 'doughnut',
+        data: {
+            labels: ['SLA Met', 'SLA Missed'],
+            datasets: [{
+                data: [met, missed],
+                backgroundColor: ['#1cc88a', '#e74a3b'],
+                borderWidth: 2,
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'bottom' },
+                tooltip: {
+                    callbacks: {
+                        label: ctx => {
+                            const pct = total > 0 ? Math.round((ctx.parsed / total) * 100) : 0;
+                            return `${ctx.label}: ${ctx.parsed} (${pct}%)`;
+                        }
+                    }
+                }
             },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: { legend: { position: 'bottom' } }
-            }
-        });
-    }
-
-    // ── View switching ──
-    function initViewSwitching() {
-        const viewBtns = document.querySelectorAll('[data-view]');
-        const sections = {
-            overview: document.getElementById('overview-section'),
-            quality:  document.getElementById('quality-section'),
-            sla:      document.getElementById('sla-section'),
-        };
-        viewBtns.forEach(btn => {
-            btn.addEventListener('click', function () {
-                viewBtns.forEach(b => b.classList.remove('active'));
-                this.classList.add('active');
-                const target = this.dataset.view;
-                Object.entries(sections).forEach(([key, el]) => {
-                    if (el) el.style.display = key === target ? 'block' : 'none';
-                });
-                if (target === 'sla') setTimeout(initializeSLAChart, 100);
-            });
-        });
-    }
-
-    // ── Period switching (day/week/month) ──
-    function initPeriodSwitching() {
-        document.querySelectorAll('[data-period]').forEach(btn => {
-            btn.addEventListener('click', function () {
-                document.querySelectorAll('[data-period]').forEach(b => b.classList.remove('active'));
-                this.classList.add('active');
-                refreshPeriodData(this.dataset.period);
-            });
-        });
-    }
-
-    function refreshPeriodData(period) {
-        showLoading();
-        fetch(`/dashboard/agent-dashboard/reports?period=${period}`, {
-            headers: { 'X-Requested-With': 'XMLHttpRequest' }
-        })
-        .then(r => r.json())
-        .then(data => {
-            if (data.overview_data && overviewChart) {
-                overviewChart.data.labels = data.overview_data.labels;
-                overviewChart.data.datasets[0].data = data.overview_data.created;
-                overviewChart.data.datasets[1].data = data.overview_data.resolved;
-                overviewChart.update();
-            }
-            hideLoading();
-        })
-        .catch(err => {
-            console.error('Period fetch error:', err);
-            hideLoading();
-        });
-    }
-
-    // ── Date range filter ──
-    function initDateRange() {
-        const sel = document.getElementById('date-range');
-        if (!sel) return;
-        sel.addEventListener('change', function () {
-            const val = this.value;
-            if (val === 'Custom range') {
-                showCustomDateModal();
-                return;
-            }
-            const range = calcDateRange(val);
-            if (range) refreshAllData(range);
-        });
-    }
-
-    function calcDateRange(label) {
-        const now = new Date();
-        let start, end = now;
-        if (label === 'Last 7 days') start = new Date(now - 7 * 864e5);
-        else if (label === 'Last 30 days') start = new Date(now - 30 * 864e5);
-        else if (label === 'This month') start = new Date(now.getFullYear(), now.getMonth(), 1);
-        else if (label === 'Last month') {
-            start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-            end = new Date(now.getFullYear(), now.getMonth(), 0);
+            cutout: '60%'
         }
-        else if (label === 'This year') start = new Date(now.getFullYear(), 0, 1);
-        else return null;
-        return { start: start.toISOString().split('T')[0], end: end.toISOString().split('T')[0], range: label };
-    }
+    });
+}
 
-    function refreshAllData(dateRange) {
-        showLoading();
-        fetch(`/dashboard/agent-dashboard/reports?start_date=${dateRange.start}&end_date=${dateRange.end}&range=${encodeURIComponent(dateRange.range)}`, {
-            headers: { 'X-Requested-With': 'XMLHttpRequest' }
-        })
-        .then(r => r.json())
-        .then(data => {
-            // Update KPIs
-            const set = (id, v) => { const el = document.getElementById(id); if (el && v !== undefined) el.textContent = v; };
-            set('kpi-total-tickets',   data.total_tickets);
-            set('kpi-avg-response',    data.avg_response_display);
-            set('kpi-resolution-rate', data.resolution_rate !== undefined ? data.resolution_rate + '%' : undefined);
-            set('kpi-csat',            data.csat_display);
+// ─────────────────────────────────────────────
+// 7. VIEW SWITCHING (Overview / Quality / SLA)
+// ─────────────────────────────────────────────
+function initViewSwitching() {
+    const viewBtns = document.querySelectorAll('[data-view]');
+    const sections = {
+        overview: document.getElementById('overview-section'),
+        quality:  document.getElementById('quality-section'),
+        sla:      document.getElementById('sla-section'),
+    };
 
-            // Update charts
-            if (data.overview_data && overviewChart) {
-                overviewChart.data.labels = data.overview_data.labels;
-                overviewChart.data.datasets[0].data = data.overview_data.created;
-                overviewChart.data.datasets[1].data = data.overview_data.resolved;
-                overviewChart.update();
+    viewBtns.forEach(btn => {
+        btn.addEventListener('click', function () {
+            viewBtns.forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            const target = this.dataset.view;
+
+            Object.entries(sections).forEach(([key, el]) => {
+                if (el) el.style.display = (key === target) ? 'block' : 'none';
+            });
+
+            // Lazy-init SLA chart when that tab is first opened
+            if (target === 'sla') {
+                setTimeout(initializeSLAChart, 100);
             }
-            if (data.status_data && statusChart) {
-                statusChart.data.datasets[0].data = data.status_data;
-                statusChart.update();
+
+            // Resize charts so they fill the now-visible container
+            if (target === 'overview') {
+                if (overviewChart) overviewChart.resize();
+                if (statusChart)   statusChart.resize();
+                if (priorityChart) priorityChart.resize();
+                if (channelChart)  channelChart.resize();
             }
-            if (data.priority_data && priorityChart) {
-                priorityChart.data.datasets[0].data = data.priority_data;
-                priorityChart.update();
-            }
-            hideLoading();
-        })
-        .catch(err => {
-            console.error('Refresh error:', err);
-            hideLoading();
         });
-    }
+    });
+}
 
-    // ── Custom date range modal ──
-    function showCustomDateModal() {
-        document.getElementById('customDateModal')?.remove();
-        document.body.insertAdjacentHTML('beforeend', `
-            <div class="modal fade" id="customDateModal" tabindex="-1">
-                <div class="modal-dialog">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h5 class="modal-title">Select Date Range</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+// ─────────────────────────────────────────────
+// 8. PERIOD SWITCHING (Day / Week / Month)
+//    Calls the AJAX endpoint and updates the overview chart
+// ─────────────────────────────────────────────
+function initPeriodSwitching() {
+    document.querySelectorAll('[data-period]').forEach(btn => {
+        btn.addEventListener('click', function () {
+            document.querySelectorAll('[data-period]').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            refreshPeriodData(this.dataset.period);
+        });
+    });
+}
+
+function refreshPeriodData(period) {
+    showLoading();
+    // The AJAX URL must match the URL that the view resolves to for reports
+    fetch(`/dashboard/agent-dashboard/reports?period=${period}`, {
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .then(r => {
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        return r.json();
+    })
+    .then(data => {
+        if (data.overview_data && overviewChart) {
+            overviewChart.data.labels            = data.overview_data.labels;
+            overviewChart.data.datasets[0].data  = data.overview_data.created;
+            overviewChart.data.datasets[1].data  = data.overview_data.resolved;
+            overviewChart.update();
+        }
+        hideLoading();
+    })
+    .catch(err => {
+        console.error('Period fetch error:', err);
+        hideLoading();
+    });
+}
+
+// ─────────────────────────────────────────────
+// 9. DATE RANGE FILTER
+// ─────────────────────────────────────────────
+function initDateRange() {
+    const sel = document.getElementById('date-range');
+    if (!sel) return;
+    sel.addEventListener('change', function () {
+        const val = this.value;
+        if (val === 'All Time') {
+            // Reload page without filters to restore all-time data
+            window.location.href = window.location.pathname;
+            return;
+        }
+        if (val === 'Custom range') {
+            showCustomDateModal();
+            return;
+        }
+        const range = calcDateRange(val);
+        if (range) refreshAllData(range);
+    });
+}
+
+function calcDateRange(label) {
+    const now = new Date();
+    let start, end = now;
+    if      (label === 'Last 7 days')  { start = new Date(now - 7  * 864e5); }
+    else if (label === 'Last 30 days') { start = new Date(now - 30 * 864e5); }
+    else if (label === 'This month')   { start = new Date(now.getFullYear(), now.getMonth(), 1); }
+    else if (label === 'Last month')   {
+        start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        end   = new Date(now.getFullYear(), now.getMonth(), 0);
+    }
+    else if (label === 'This year')    { start = new Date(now.getFullYear(), 0, 1); }
+    else return null;
+    return {
+        start: start.toISOString().split('T')[0],
+        end:   end.toISOString().split('T')[0],
+        range: label
+    };
+}
+
+function refreshAllData(dateRange) {
+    showLoading();
+    const url = `/dashboard/agent-dashboard/reports`
+        + `?start_date=${dateRange.start}`
+        + `&end_date=${dateRange.end}`
+        + `&range=${encodeURIComponent(dateRange.range)}`;
+
+    fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+    .then(r => {
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        return r.json();
+    })
+    .then(data => {
+        // ── KPIs ──
+        const set = (id, v) => {
+            const el = document.getElementById(id);
+            if (el && v !== undefined && v !== null) el.textContent = v;
+        };
+        set('kpi-total-tickets',   data.total_tickets);
+        set('kpi-avg-response',    data.avg_response_display);
+        set('kpi-resolution-rate', data.resolution_rate !== undefined ? data.resolution_rate + '%' : undefined);
+        set('kpi-csat',            data.csat_display);
+
+        // ── Overview chart ──
+        if (data.overview_data && overviewChart) {
+            overviewChart.data.labels           = data.overview_data.labels;
+            overviewChart.data.datasets[0].data = data.overview_data.created;
+            overviewChart.data.datasets[1].data = data.overview_data.resolved;
+            overviewChart.update();
+        }
+
+        // ── Status chart + legend text ──
+        if (data.status_data && statusChart) {
+            const hasStatus = data.status_data.some(v => v > 0);
+            statusChart.data.datasets[0].data = hasStatus ? data.status_data : [1, 0, 0];
+            statusChart.update();
+            const pcts = data.status_data;
+            const setEl = (id, v) => { const e = document.getElementById(id); if (e) e.textContent = v + '%'; };
+            if (pcts.length >= 3) {
+                setEl('status-open-pct',       pcts[0]);
+                setEl('status-resolved-pct',   pcts[1]);
+                setEl('status-inprogress-pct', pcts[2]);
+            }
+        }
+
+        // ── Priority chart ──
+        if (data.priority_data && priorityChart) {
+            priorityChart.data.datasets[0].data = data.priority_data;
+            priorityChart.update();
+        }
+
+        // ── Channel chart ──
+        if (data.channel_data && channelChart) {
+            const hasChannel = data.channel_data.some(v => v > 0);
+            channelChart.data.datasets[0].data = hasChannel ? data.channel_data : [1,1,1,1];
+            channelChart.update();
+        }
+
+        // ── SLA data (update in memory so re-opening SLA tab shows new values) ──
+        if (data.sla_data) {
+            INITIAL_DATA.sla.met    = data.sla_data.met    || 0;
+            INITIAL_DATA.sla.missed = data.sla_data.missed || 0;
+            // Re-draw SLA chart if visible
+            const slaSection = document.getElementById('sla-section');
+            if (slaSection && slaSection.style.display !== 'none') {
+                initializeSLAChart();
+            }
+        }
+
+        hideLoading();
+    })
+    .catch(err => {
+        console.error('Refresh error:', err);
+        hideLoading();
+    });
+}
+
+// ─────────────────────────────────────────────
+// 10. CUSTOM DATE RANGE MODAL
+// ─────────────────────────────────────────────
+function showCustomDateModal() {
+    document.getElementById('customDateModal')?.remove();
+    document.body.insertAdjacentHTML('beforeend', `
+        <div class="modal fade" id="customDateModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Select Custom Date Range</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Start Date</label>
+                            <input type="date" class="form-control" id="customStart">
                         </div>
-                        <div class="modal-body">
-                            <div class="mb-3">
-                                <label class="form-label">Start Date</label>
-                                <input type="date" class="form-control" id="customStart">
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label">End Date</label>
-                                <input type="date" class="form-control" id="customEnd">
-                            </div>
-                        </div>
-                        <div class="modal-footer">
-                            <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                            <button class="btn btn-primary" onclick="applyCustomDate()">Apply</button>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">End Date</label>
+                            <input type="date" class="form-control" id="customEnd">
                         </div>
                     </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button class="btn btn-primary" onclick="applyCustomDate()">Apply</button>
+                    </div>
                 </div>
-            </div>`);
-        const now = new Date();
-        document.getElementById('customStart').value = new Date(now - 30 * 864e5).toISOString().split('T')[0];
-        document.getElementById('customEnd').value = now.toISOString().split('T')[0];
-        new bootstrap.Modal(document.getElementById('customDateModal')).show();
-    }
+            </div>
+        </div>`);
 
-    function applyCustomDate() {
-        const s = document.getElementById('customStart').value;
-        const e = document.getElementById('customEnd').value;
-        if (s && e) {
-            bootstrap.Modal.getInstance(document.getElementById('customDateModal')).hide();
-            document.getElementById('customDateModal').remove();
-            refreshAllData({ start: s, end: e, range: 'Custom range' });
-        }
-    }
+    const now = new Date();
+    document.getElementById('customStart').value =
+        new Date(now - 30 * 864e5).toISOString().split('T')[0];
+    document.getElementById('customEnd').value =
+        now.toISOString().split('T')[0];
+    new bootstrap.Modal(document.getElementById('customDateModal')).show();
+}
 
-    // ── Export functions ──
-    function getCsrfToken() {
-        const el = document.querySelector('[name=csrfmiddlewaretoken]');
-        return el ? el.value : '';
-    }
+function applyCustomDate() {
+    const s = document.getElementById('customStart').value;
+    const e = document.getElementById('customEnd').value;
+    if (!s || !e) return;
+    if (s > e) { alert('Start date must be before end date.'); return; }
+    bootstrap.Modal.getInstance(document.getElementById('customDateModal')).hide();
+    document.getElementById('customDateModal').remove();
+    refreshAllData({ start: s, end: e, range: 'Custom range' });
+}
 
-    function exportReport(format) {
-        showLoading();
-        const dateRange = document.getElementById('date-range').value;
-        const formData = new FormData();
-        formData.append('export_format', format);
-        formData.append('date_range', dateRange);
-        formData.append('report_type', 'agent_performance');
+// ─────────────────────────────────────────────
+// 11. EXPORT
+// ─────────────────────────────────────────────
+function getCsrfToken() {
+    const el = document.querySelector('[name=csrfmiddlewaretoken]');
+    return el ? el.value : '';
+}
 
-        fetch('/dashboard/agent-dashboard/api/export-reports/', {
-            method: 'POST',
-            body: formData,
-            headers: { 'X-CSRFToken': getCsrfToken() }
-        })
-        .then(response => {
-            if (!response.ok) throw new Error(`Server error: ${response.status}`);
-            return response.blob();
-        })
-        .then(blob => {
-            hideLoading();
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `agent_report_${new Date().toISOString().split('T')[0]}.${format === 'pdf' ? 'pdf' : 'csv'}`;
-            document.body.appendChild(a);
-            a.click();
-            window.URL.revokeObjectURL(url);
-            document.body.removeChild(a);
-        })
-        .catch(err => {
-            hideLoading();
-            alert(`Export failed: ${err.message}. Please try again.`);
-            console.error('Export error:', err);
-        });
-    }
+function exportReport(format) {
+    showLoading();
+    const dateRange = document.getElementById('date-range').value;
+    const formData  = new FormData();
+    formData.append('export_format', format);
+    formData.append('date_range',    dateRange);
+    formData.append('report_type',   'agent_performance');
 
-    function exportFullReport() {
-        exportReport('csv');
-    }
-
-    // ── DOMContentLoaded ──
-    document.addEventListener('DOMContentLoaded', function () {
-        const headerUrl  = '{{ header_url }}'  || '/dashboard/agent-dashboard/partials/header.html';
-        const sidebarUrl = '{{ sidebar_url }}' || '/dashboard/agent-dashboard/partials/sidebar.html';
-        const modalsUrl  = '{{ modals_url }}'  || '/dashboard/agent-dashboard/partials/modals.html';
-
-        loadComponent(headerUrl, 'header-container').then(ok => {
-            if (ok) setTimeout(() => { if (window.initializeHeader) window.initializeHeader(); }, 100);
-        });
-        loadComponent(sidebarUrl, 'sidebar-container');
-        loadComponent(modalsUrl,  'modals-container');
-
-        initViewSwitching();
-        initializeCharts();
-        initDateRange();
-        initPeriodSwitching();
+    fetch('/dashboard/agent-dashboard/api/export-reports/', {
+        method: 'POST',
+        body:   formData,
+        headers: { 'X-CSRFToken': getCsrfToken() }
+    })
+    .then(response => {
+        if (!response.ok) throw new Error(`Server error: ${response.status}`);
+        return response.blob();
+    })
+    .then(blob => {
+        hideLoading();
+        const url = window.URL.createObjectURL(blob);
+        const a   = document.createElement('a');
+        a.href    = url;
+        a.download = `agent_report_${new Date().toISOString().split('T')[0]}.${format === 'pdf' ? 'pdf' : 'csv'}`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+    })
+    .catch(err => {
+        hideLoading();
+        alert(`Export failed: ${err.message}. Please try again.`);
+        console.error('Export error:', err);
     });
+}
+
+function exportFullReport() { exportReport('csv'); }
+
+// ─────────────────────────────────────────────
+// 12. DOM READY
+// ─────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', function () {
+    const headerUrl  = '{{ header_url|default:"/dashboard/agent-dashboard/partials/header.html" }}';
+    const sidebarUrl = '{{ sidebar_url|default:"/dashboard/agent-dashboard/partials/sidebar.html" }}';
+    const modalsUrl  = '{{ modals_url|default:"/dashboard/agent-dashboard/partials/modals.html" }}';
+
+    loadComponent(headerUrl,  'header-container').then(ok => {
+        if (ok) setTimeout(() => { if (window.initializeHeader) window.initializeHeader(); }, 100);
+    });
+    loadComponent(sidebarUrl, 'sidebar-container');
+    loadComponent(modalsUrl,  'modals-container');
+
+    initViewSwitching();
+    initializeCharts();
+    initDateRange();
+    initPeriodSwitching();
+});
 </script>
 
 <script src="{% static 'agentdashboard/js/script.js' %}"></script>

@@ -224,7 +224,18 @@
                                             </div>
                                         </td>
                                         <td>{{ t.created_at|date:"M d" }}</td>
-                                        <td>-</td>
+                                        <td>
+                                            {% if t.due_date %}
+                                                {% load tz %}
+                                                {% if t.due_date < now %}
+                                                    <span class="text-danger">{{ t.due_date|timezone:"Asia/Kolkata"|date:"M d H:i" }}</span>
+                                                {% else %}
+                                                    {{ t.due_date|timezone:"Asia/Kolkata"|date:"M d H:i" }}
+                                                {% endif %}
+                                            {% else %}
+                                                -
+                                            {% endif %}
+                                        </td>
                                         <td>
                                             <span class="badge
                                                 {% if t.priority in 'High,Critical' and t.status in 'Open,In Progress' %} bg-danger
@@ -438,16 +449,22 @@
                 console.log('Sort select options:', Array.from(sortSelect.options).map(opt => opt.value));
             }
 
-            // Debug: Add event listener to sort dropdown
+            // Sort dropdown change handler
             if (sortSelect) {
                 sortSelect.addEventListener('change', function(e) {
-                    console.log('Sort dropdown changed:', e.target.value);
+                    console.log('Sort dropdown changed to:', e.target.value);
                     const sortValue = e.target.value;
+                    
                     // Get current URL parameters
                     const urlParams = new URLSearchParams(window.location.search);
                     urlParams.set('sort', sortValue);
+                    
+                    // Build new URL with sort parameter
+                    const newUrl = `${window.location.pathname}?${urlParams.toString()}`;
+                    console.log('Reloading to:', newUrl);
+                    
                     // Reload page with new sort parameter
-                    window.location.href = `${window.location.pathname}?${urlParams.toString()}`;
+                    window.location.href = newUrl;
                 });
             }
 
@@ -569,9 +586,7 @@
             if (typeSelect) {
                 typeSelect.addEventListener('change', () => applyAgentTicketFilters());
             }
-            if (sortSelect) {
-                sortSelect.addEventListener('change', () => applyAgentTicketFilters());
-            }
+            // Sort is handled by page reload, no need for client-side sort handler
             if (rangeButtons.length) {
                 rangeButtons.forEach(btn => {
                     btn.addEventListener('click', () => {
